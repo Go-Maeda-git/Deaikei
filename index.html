@@ -5,36 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Uni-Link プロトタイプ (高専版)</title>
     <style>
-        /* 基本的なスタイル */
+        /* CSSスタイルは変更ありません */
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; line-height: 1.6; margin: 0; padding: 20px; background-color: #f4f7f6; color: #333; }
         .container { max-width: 800px; margin: 0 auto; background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         h1, h2 { text-align: center; color: #0056b3; }
-        
-        /* 画面切り替えのためのスタイル */
         .screen { display: none; }
         .screen.active { display: block; }
-
-        /* フォームとボタン */
         input[type="text"], input[type="password"], select { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
         button { background-color: #007bff; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; width: 100%; }
         button:hover { background-color: #0056b3; }
         .secondary-button { background-color: #6c757d; margin-top: 10px; }
         .secondary-button:hover { background-color: #5a6268; }
         .logout-button { background-color: #dc3545; width: auto; float: right;}
-
-        /* ユーザーカード */
         .user-list, .match-list { list-style: none; padding: 0; }
         .user-card { border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 8px; background: #fff; }
         .user-card h3 { margin-top: 0; }
         .user-card .tags { margin-top: 10px; }
         .tag { display: inline-block; background-color: #e9ecef; color: #495057; padding: 3px 8px; margin: 2px; border-radius: 12px; font-size: 14px; }
-        
-        /* ナビゲーション */
         nav { display: flex; justify-content: space-around; border-bottom: 2px solid #007bff; margin-bottom: 20px; }
         nav button { background: none; border: none; color: #007bff; padding: 15px; font-size: 16px; cursor: pointer; width: 33.3%; border-radius: 0; }
         nav button.active { border-bottom: 3px solid #0056b3; font-weight: bold; }
-
-        /* プロフィール編集 */
         #profile-interests-editor { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; }
         #profile-interests-editor label { display: flex; align-items: center; cursor: pointer; padding: 5px; border: 1px solid #ddd; border-radius: 5px; }
     </style>
@@ -42,7 +32,7 @@
 <body>
 
     <div class="container">
-        <!-- ログイン画面 -->
+        <!-- HTML部分は変更ありません -->
         <div id="login-screen" class="screen active">
             <h1>Uni-Link</h1>
             <h2>高専内交流促進アプリ</h2>
@@ -52,20 +42,17 @@
             <button class="secondary-button" onclick="showScreen('register-screen')">新規登録はこちら</button>
         </div>
 
-        <!-- 新規登録画面 (高専仕様に修正) -->
         <div id="register-screen" class="screen">
             <h1>新規登録</h1>
             <input type="text" id="register-id" placeholder="学籍番号 (例: 20c123)">
             <input type="password" id="register-password" placeholder="パスワード">
             <input type="text" id="register-name" placeholder="ニックネーム">
-            <!-- 学科の選択肢を M, E, C, A に変更 -->
             <select id="register-faculty">
                 <option value="M科">M科 (機械工学科)</option>
                 <option value="E科">E科 (電気電子工学科)</option>
                 <option value="C科">C科 (情報工学科)</option>
                 <option value="A科">A科 (物質化学工学科)</option>
             </select>
-            <!-- 学年の選択肢を 1~5年 + 専攻科1~2年 に変更 -->
             <select id="register-grade">
                 <option value="1年">1年</option>
                 <option value="2年">2年</option>
@@ -79,7 +66,6 @@
             <button class="secondary-button" onclick="showScreen('login-screen')">ログイン画面に戻る</button>
         </div>
 
-        <!-- メイン画面 -->
         <div id="main-screen" class="screen">
             <button class="logout-button" onclick="handleLogout()">ログアウト</button>
             <h1 id="welcome-message">ようこそ！</h1>
@@ -90,14 +76,12 @@
                 <button id="nav-profile" onclick="showTab('profile')">プロフィール編集</button>
             </nav>
 
-            <!-- ユーザー一覧タブ -->
             <div id="users-tab">
                 <ul id="user-list" class="user-list">
                     <!-- JSによってユーザーカードがここに挿入されます -->
                 </ul>
             </div>
 
-            <!-- マッチング一覧タブ -->
             <div id="matches-tab" style="display: none;">
                 <h2>マッチング成立！</h2>
                 <p>相互に「いいね」したユーザーです。学内SNSやTeamsなどで連絡を取ってみましょう！</p>
@@ -106,7 +90,6 @@
                 </ul>
             </div>
 
-            <!-- プロフィール編集タブ -->
             <div id="profile-tab" style="display: none;">
                 <h2>プロフィール編集</h2>
                 <p><strong>興味・関心タグ（複数選択可）</strong></p>
@@ -118,64 +101,62 @@
         </div>
     </div>
 
+    <!-- ▼▼▼ここから下がFirebase連携のためのコード▼▼▼ -->
+
+    <!-- Firebase SDK (Software Development Kit) を読み込む -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
     <script>
         // ===============================================
-        // グローバル変数と初期化
+        // Firebase の初期化
+        // ===============================================
+        // あなたのプロジェクトのfirebaseConfig情報です
+        const firebaseConfig = {
+          apiKey: "AIzaSyAcKf5BrhFFkv74WdaamqnrCY1qSRxsVjE",
+          authDomain: "deaikei-kosen.firebaseapp.com",
+          projectId: "deaikei-kosen",
+          storageBucket: "deaikei-kosen.firebasestorage.app",
+          messagingSenderId: "166298285211",
+          appId: "1:166298285211:web:5381e5e419754e0376c23e"
+        };
+
+        // Firebaseを初期化する
+        firebase.initializeApp(firebaseConfig);
+
+        // これから使うFirebaseのサービスを変数に入れておく
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+    </script>
+
+    <script>
+        // ===============================================
+        // アプリケーションのメインJavaScript
         // ===============================================
         let loggedInUserId = null;
         
-        // 利用可能な興味タグのリスト
         const allInterests = [
             "プログラミング", "機械学習", "電子工作", "設計", "実験", "ロボコン",
             "デザイン", "映像制作", "バスケ", "サッカー", "テニス", "音楽", "バンド",
             "TOEIC勉強中", "論文執筆", "起業したい", "ボランティア", "バイク"
         ];
 
-        // ページ読み込み時の処理
-        window.onload = function() {
-            // localStorageからデータを読み込む（なければ初期化）
-            if (!localStorage.getItem('users')) {
-                // デモ用のダミーデータを作成 (高専仕様に修正)
-                const dummyUsers = [
-                    { id: '20c001', password: 'a', name: '高専タロウ', faculty: 'C科', grade: '4年', interests: ['プログラミング', '機械学習', 'ロボコン'] },
-                    { id: '21e002', password: 'b', name: '電脳ハナコ', faculty: 'E科', grade: '3年', interests: ['電子工作', '音楽', 'バンド'] },
-                    { id: '19m003', password: 'c', name: '機械ジロウ', faculty: 'M科', grade: '5年', interests: ['ロボコン', '設計', 'バイク'] },
-                    { id: '22a004', password: 'd', name: '化学サチコ', faculty: 'A科', grade: '2年', interests: ['実験', 'ボランティア'] },
-                    { id: 's01c005', password: 'e', name: '専攻イチロー', faculty: 'C科', grade: '専攻科1年', interests: ['機械学習', '論文執筆', '起業したい'] },
-                ];
-                localStorage.setItem('users', JSON.stringify(dummyUsers));
-            }
-            if (!localStorage.getItem('likes')) {
-                // 20c001 -> 21e002, 19m003 -> 20c001
-                const dummyLikes = [ {from: '20c001', to: '21e002'}, {from: '19m003', to: '20c001'} ];
-                localStorage.setItem('likes', JSON.stringify(dummyLikes));
-            }
-            
-            // ログイン状態をチェック
-            loggedInUserId = sessionStorage.getItem('loggedInUserId');
-            if (loggedInUserId) {
+        // ===============================================
+        // ログイン状態の監視 (Firebase版)
+        // ===============================================
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                // ユーザーがログインしている場合の処理
+                loggedInUserId = user.uid;
                 showScreen('main-screen');
                 renderMainScreen();
             } else {
+                // ユーザーがログアウトしている場合の処理
+                loggedInUserId = null;
                 showScreen('login-screen');
             }
-        };
-
-        // ===============================================
-        // データ操作ヘルパー関数 (localStorage)
-        // ===============================================
-        function getUsers() {
-            return JSON.parse(localStorage.getItem('users')) || [];
-        }
-        function saveUsers(users) {
-            localStorage.setItem('users', JSON.stringify(users));
-        }
-        function getLikes() {
-            return JSON.parse(localStorage.getItem('likes')) || [];
-        }
-        function saveLikes(likes) {
-            localStorage.setItem('likes', JSON.stringify(likes));
-        }
+        });
 
         // ===============================================
         // 画面・タブ切り替え
@@ -188,202 +169,117 @@
         }
 
         function showTab(tabId) {
-            // タブコンテンツの表示切り替え
             document.getElementById('users-tab').style.display = 'none';
             document.getElementById('matches-tab').style.display = 'none';
             document.getElementById('profile-tab').style.display = 'none';
             document.getElementById(`${tabId}-tab`).style.display = 'block';
 
-            // ナビゲーションボタンのアクティブ状態を切り替え
             document.querySelectorAll('nav button').forEach(btn => btn.classList.remove('active'));
             document.getElementById(`nav-${tabId}`).classList.add('active');
 
-            // タブに応じた描画処理
+            // ★★★ 注意: これ以降の描画関数は次のステップでFirestore対応します ★★★
             if (tabId === 'users') renderUsers();
             if (tabId === 'matches') renderMatches();
             if (tabId === 'profile') renderProfileEditor();
         }
 
         // ===============================================
-        // ユーザー認証関連
+        // ユーザー認証関連 (Firebase版)
         // ===============================================
         function handleRegister() {
-            const id = document.getElementById('register-id').value;
+            const studentId = document.getElementById('register-id').value;
+            const email = studentId + '@g.kosen.ac.jp'; // Firebase用にダミーのドメインを付与
             const password = document.getElementById('register-password').value;
             const name = document.getElementById('register-name').value;
             const faculty = document.getElementById('register-faculty').value;
             const grade = document.getElementById('register-grade').value;
 
-            if (!id || !password || !name) {
+            if (!studentId || !password || !name) {
                 alert('学籍番号, パスワード, ニックネームは必須です。');
                 return;
             }
 
-            const users = getUsers();
-            if (users.find(user => user.id === id)) {
-                alert('その学籍番号は既に使用されています。');
-                return;
-            }
-
-            const newUser = { id, password, name, faculty, grade, interests: [] };
-            users.push(newUser);
-            saveUsers(users);
-
-            alert('登録が完了しました。ログインしてください。');
-            showScreen('login-screen');
+            // FirebaseのAuthentication機能を使ってユーザーを作成
+            auth.createUserWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    const user = userCredential.user;
+                    
+                    // Firestoreにユーザーのプロフィール情報も保存する
+                    // .collection('users') -> usersという名前の保管場所を指定
+                    // .doc(user.uid) -> 今登録したユーザー固有のIDでファイル名を指定
+                    // .set(...) -> 以下の内容を書き込む
+                    db.collection('users').doc(user.uid).set({
+                        uid: user.uid,
+                        studentId: studentId, // 学籍番号も保存しておく
+                        name: name,
+                        faculty: faculty,
+                        grade: grade,
+                        interests: [] // 最初は空
+                    })
+                    .then(() => {
+                        alert('登録が完了しました！ログインしてください。');
+                        showScreen('login-screen');
+                    });
+                })
+                .catch((error) => {
+                    alert('登録に失敗しました。\n' + error.message);
+                });
         }
 
         function handleLogin() {
-            const id = document.getElementById('login-id').value;
+            const email = document.getElementById('login-id').value + '@g.kosen.ac.jp';
             const password = document.getElementById('login-password').value;
             
-            const users = getUsers();
-            const user = users.find(u => u.id === id && u.password === password);
-
-            if (user) {
-                loggedInUserId = user.id;
-                sessionStorage.setItem('loggedInUserId', user.id); // ページをリロードしてもログイン維持
-                showScreen('main-screen');
-                renderMainScreen();
-            } else {
-                alert('学籍番号またはパスワードが間違っています。');
-            }
+            auth.signInWithEmailAndPassword(email, password)
+                .catch((error) => {
+                    alert('学籍番号またはパスワードが間違っています。\n' + error.message);
+                });
         }
 
         function handleLogout() {
-            loggedInUserId = null;
-            sessionStorage.removeItem('loggedInUserId');
-            showScreen('login-screen');
+            auth.signOut();
         }
 
         // ===============================================
         // メイン画面の描画処理
         // ===============================================
         function renderMainScreen() {
-            const users = getUsers();
-            const currentUser = users.find(u => u.id === loggedInUserId);
-            document.getElementById('welcome-message').textContent = `ようこそ、${currentUser.name}さん！`;
+            // Firestoreから自分のユーザー情報を取得して表示する
+            db.collection('users').doc(loggedInUserId).get().then(doc => {
+                if (doc.exists) {
+                    const myData = doc.data();
+                    document.getElementById('welcome-message').textContent = `ようこそ、${myData.name}さん！`;
+                } else {
+                    document.getElementById('welcome-message').textContent = `ようこそ！`;
+                }
+            });
             showTab('users'); // 初期タブはユーザー一覧
         }
 
-        // ユーザー一覧を描画
+        // ★★★注意★★★
+        // これ以降の関数はまだ正しく動作しません。次のステップでFirestoreを使うように書き換えます。
+        // 今はエラーが出ないように、仮の表示だけさせています。
         function renderUsers() {
-            const allUsers = getUsers();
-            const likes = getLikes();
-            const userList = document.getElementById('user-list');
-            userList.innerHTML = '';
-
-            // 自分以外のユーザーを表示
-            allUsers.filter(user => user.id !== loggedInUserId).forEach(user => {
-                const iLiked = likes.some(like => like.from === loggedInUserId && like.to === user.id);
-                
-                const card = document.createElement('li');
-                card.className = 'user-card';
-                card.innerHTML = `
-                    <h3>${user.name} <small>(${user.faculty}・${user.grade})</small></h3>
-                    <div class="tags">
-                        ${user.interests.map(tag => `<span class="tag">${tag}</span>`).join('')}
-                    </div>
-                    <button onclick="handleLike('${user.id}')" ${iLiked ? 'disabled' : ''}>
-                        ${iLiked ? '✅ いいね済み' : '👍 いいね！'}
-                    </button>
-                `;
-                userList.appendChild(card);
-            });
+            console.log("renderUsersは次のステップで実装します");
+            document.getElementById('user-list').innerHTML = "<p>ユーザー情報を読み込み中...</p>";
         }
         
-        // マッチング一覧を描画
         function renderMatches() {
-            const allUsers = getUsers();
-            const likes = getLikes();
-            const matchList = document.getElementById('match-list');
-            matchList.innerHTML = '';
-
-            const myLikes = likes.filter(like => like.from === loggedInUserId).map(l => l.to);
-            
-            myLikes.forEach(likedUserId => {
-                // 相手も自分に「いいね」しているかチェック（相互いいね）
-                const isMatch = likes.some(like => like.from === likedUserId && like.to === loggedInUserId);
-                if (isMatch) {
-                    const matchedUser = allUsers.find(u => u.id === likedUserId);
-                    if (matchedUser) {
-                        const card = document.createElement('li');
-                        card.className = 'user-card';
-                        card.innerHTML = `
-                            <h3>${matchedUser.name} <small>(${matchedUser.faculty}・${matchedUser.grade})</small></h3>
-                            <div class="tags">
-                                ${matchedUser.interests.map(tag => `<span class="tag">${tag}</span>`).join('')}
-                            </div>
-                        `;
-                        matchList.appendChild(card);
-                    }
-                }
-            });
-
-            if (matchList.innerHTML === '') {
-                matchList.innerHTML = '<p>まだマッチングしたユーザーはいません。</p>';
-            }
+            console.log("renderMatchesは次のステップで実装します");
+            document.getElementById('match-list').innerHTML = "<p>マッチング情報を読み込み中...</p>";
         }
 
-        // プロフィール編集画面を描画
         function renderProfileEditor() {
-            const users = getUsers();
-            const currentUser = users.find(u => u.id === loggedInUserId);
-            const editor = document.getElementById('profile-interests-editor');
-            editor.innerHTML = '';
-
-            allInterests.forEach(interest => {
-                const isChecked = currentUser.interests.includes(interest);
-                const checkboxHtml = `
-                    <label>
-                        <input type="checkbox" value="${interest}" ${isChecked ? 'checked' : ''}>
-                        ${interest}
-                    </label>
-                `;
-                editor.innerHTML += checkboxHtml;
-            });
+            console.log("renderProfileEditorは次のステップで実装します");
+            document.getElementById('profile-interests-editor').innerHTML = "<p>プロフィール情報を読み込み中...</p>";
         }
 
-
-        // ===============================================
-        // アクションハンドラ
-        // ===============================================
         function handleLike(targetUserId) {
-            const likes = getLikes();
-            
-            // 既にいいねしていないか念のため確認
-            const alreadyLiked = likes.some(like => like.from === loggedInUserId && like.to === targetUserId);
-            if(alreadyLiked) return;
-
-            likes.push({ from: loggedInUserId, to: targetUserId });
-            saveLikes(likes);
-            
-            // UIを更新
-            renderUsers();
-
-            // マッチングが成立したかチェック
-            const isMatch = likes.some(like => like.from === targetUserId && like.to === loggedInUserId);
-            if (isMatch) {
-                const allUsers = getUsers();
-                const targetUser = allUsers.find(u => u.id === targetUserId);
-                alert(`${targetUser.name}さんとマッチングしました！`);
-            }
+            alert("「いいね」機能は次のステップで実装します。");
         }
 
         function updateProfile() {
-            const users = getUsers();
-            const currentUserIndex = users.findIndex(u => u.id === loggedInUserId);
-            
-            const selectedInterests = [];
-            document.querySelectorAll('#profile-interests-editor input[type="checkbox"]:checked').forEach(checkbox => {
-                selectedInterests.push(checkbox.value);
-            });
-
-            users[currentUserIndex].interests = selectedInterests;
-            saveUsers(users);
-
-            alert('プロフィールを更新しました！');
-            showTab('users'); // 更新後、ユーザー一覧に戻る
+             alert("プロフィール更新機能は次のステップで実装します。");
         }
     </script>
 </body>
