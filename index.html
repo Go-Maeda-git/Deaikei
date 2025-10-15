@@ -11,7 +11,7 @@
         h1, h2 { text-align: center; color: #0056b3; }
         .screen { display: none; }
         .screen.active { display: block; }
-        input[type="text"], input[type="password"], select { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        input[type="email"], input[type="text"], input[type="password"], select { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
         button { background-color: #007bff; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; width: 100%; }
         button:hover { background-color: #0056b3; }
         .secondary-button { background-color: #6c757d; margin-top: 10px; }
@@ -32,11 +32,12 @@
 <body>
 
     <div class="container">
-        <!-- HTML部分は変更ありません -->
+        <!-- ▼▼▼ HTMLの入力欄を変更 ▼▼▼ -->
         <div id="login-screen" class="screen active">
             <h1>Uni-Link</h1>
             <h2>高専内交流促進アプリ</h2>
-            <input type="text" id="login-id" placeholder="学籍番号">
+            <!-- typeを"email", placeholderを"学校のメールアドレス"に変更 -->
+            <input type="email" id="login-id" placeholder="学校のメールアドレス">
             <input type="password" id="login-password" placeholder="パスワード">
             <button onclick="handleLogin()">ログイン</button>
             <button class="secondary-button" onclick="showScreen('register-screen')">新規登録はこちら</button>
@@ -44,7 +45,8 @@
 
         <div id="register-screen" class="screen">
             <h1>新規登録</h1>
-            <input type="text" id="register-id" placeholder="学籍番号 (例: 20c123)">
+            <!-- typeを"email", placeholderを"学校のメールアドレス"に変更 -->
+            <input type="email" id="register-id" placeholder="学校のメールアドレス (例: s20c123@s.akashi.ac.jp)">
             <input type="password" id="register-password" placeholder="パスワード">
             <input type="text" id="register-name" placeholder="ニックネーム">
             <select id="register-faculty">
@@ -65,6 +67,7 @@
             <button onclick="handleRegister()">登録する</button>
             <button class="secondary-button" onclick="showScreen('login-screen')">ログイン画面に戻る</button>
         </div>
+        <!-- ▲▲▲ HTMLの入力欄を変更 ▲▲▲ -->
 
         <div id="main-screen" class="screen">
             <button class="logout-button" onclick="handleLogout()">ログアウト</button>
@@ -77,31 +80,23 @@
             </nav>
 
             <div id="users-tab">
-                <ul id="user-list" class="user-list">
-                    <!-- JSによってユーザーカードがここに挿入されます -->
-                </ul>
+                <ul id="user-list" class="user-list"></ul>
             </div>
 
             <div id="matches-tab" style="display: none;">
                 <h2>マッチング成立！</h2>
                 <p>相互に「いいね」したユーザーです。学内SNSやTeamsなどで連絡を取ってみましょう！</p>
-                <ul id="match-list" class="match-list">
-                    <!-- JSによってマッチングしたユーザーがここに挿入されます -->
-                </ul>
+                <ul id="match-list" class="match-list"></ul>
             </div>
 
             <div id="profile-tab" style="display: none;">
                 <h2>プロフィール編集</h2>
                 <p><strong>興味・関心タグ（複数選択可）</strong></p>
-                <div id="profile-interests-editor">
-                    <!-- JSによって興味タグのチェックボックスがここに挿入されます -->
-                </div>
+                <div id="profile-interests-editor"></div>
                 <button onclick="updateProfile()">プロフィールを更新</button>
             </div>
         </div>
     </div>
-
-    <!-- ▼▼▼ここから下がFirebase連携のためのコード▼▼▼ -->
 
     <!-- Firebase SDK (Software Development Kit) を読み込む -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -109,10 +104,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
     <script>
-        // ===============================================
-        // Firebase の初期化
-        // ===============================================
-        // あなたのプロジェクトのfirebaseConfig情報です
+        // Firebase の初期化（あなたの設定に置き換えてください）
         const firebaseConfig = {
           apiKey: "AIzaSyAcKf5BrhFFkv74WdaamqnrCY1qSRxsVjE",
           authDomain: "deaikei-kosen.firebaseapp.com",
@@ -121,11 +113,7 @@
           messagingSenderId: "166298285211",
           appId: "1:166298285211:web:5381e5e419754e0376c23e"
         };
-
-        // Firebaseを初期化する
         firebase.initializeApp(firebaseConfig);
-
-        // これから使うFirebaseのサービスを変数に入れておく
         const auth = firebase.auth();
         const db = firebase.firestore();
     </script>
@@ -139,145 +127,123 @@
         const allInterests = [
             "プログラミング", "機械学習", "電子工作", "設計", "実験", "ロボコン",
             "デザイン", "映像制作", "バスケ", "サッカー", "テニス", "音楽", "バンド",
-            "TOEIC勉強中", "論文執筆", "起業したい", "ボランティア", "バイク"
+            "TOIC勉強中", "論文執筆", "起業したい", "ボランティア", "バイク"
         ];
 
-        // ===============================================
-        // ログイン状態の監視 (Firebase版)
-        // ===============================================
+        // ログイン状態の監視
         auth.onAuthStateChanged(user => {
             if (user) {
-                // ユーザーがログインしている場合の処理
                 loggedInUserId = user.uid;
                 showScreen('main-screen');
                 renderMainScreen();
             } else {
-                // ユーザーがログアウトしている場合の処理
                 loggedInUserId = null;
                 showScreen('login-screen');
             }
         });
 
-        // ===============================================
         // 画面・タブ切り替え
-        // ===============================================
         function showScreen(screenId) {
-            document.querySelectorAll('.screen').forEach(screen => {
-                screen.classList.remove('active');
-            });
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById(screenId).classList.add('active');
         }
 
         function showTab(tabId) {
-            document.getElementById('users-tab').style.display = 'none';
-            document.getElementById('matches-tab').style.display = 'none';
-            document.getElementById('profile-tab').style.display = 'none';
+            ['users-tab', 'matches-tab', 'profile-tab'].forEach(id => document.getElementById(id).style.display = 'none');
             document.getElementById(`${tabId}-tab`).style.display = 'block';
 
             document.querySelectorAll('nav button').forEach(btn => btn.classList.remove('active'));
             document.getElementById(`nav-${tabId}`).classList.add('active');
 
-            // ★★★ 注意: これ以降の描画関数は次のステップでFirestore対応します ★★★
             if (tabId === 'users') renderUsers();
             if (tabId === 'matches') renderMatches();
             if (tabId === 'profile') renderProfileEditor();
         }
 
         // ===============================================
-        // ユーザー認証関連 (Firebase版)
+        // ユーザー認証関連 (新要件対応版)
         // ===============================================
         function handleRegister() {
-            const studentId = document.getElementById('register-id').value;
-            const email = studentId + '@g.kosen.ac.jp'; // Firebase用にダミーのドメインを付与
+            const email = document.getElementById('register-id').value.trim();
             const password = document.getElementById('register-password').value;
             const name = document.getElementById('register-name').value;
             const faculty = document.getElementById('register-faculty').value;
             const grade = document.getElementById('register-grade').value;
 
-            if (!studentId || !password || !name) {
-                alert('学籍番号, パスワード, ニックネームは必須です。');
+            if (!email || !password || !name) {
+                alert('メールアドレス, パスワード, ニックネームは必須です。');
                 return;
             }
 
-            // FirebaseのAuthentication機能を使ってユーザーを作成
+            // ★★★ 要件: @s.akashi.ac.jp で終わるメールアドレスかチェック ★★★
+            if (!email.endsWith('@s.akashi.ac.jp')) {
+                alert('登録できるのは "@s.akashi.ac.jp" のメールアドレスのみです。');
+                return;
+            }
+
             auth.createUserWithEmailAndPassword(email, password)
-                .then((userCredential) => {
+                .then(userCredential => {
                     const user = userCredential.user;
-                    
-                    // Firestoreにユーザーのプロフィール情報も保存する
-                    // .collection('users') -> usersという名前の保管場所を指定
-                    // .doc(user.uid) -> 今登録したユーザー固有のIDでファイル名を指定
-                    // .set(...) -> 以下の内容を書き込む
+                    const studentId = email.split('@')[0]; // メールアドレスから学籍番号を抽出
+
                     db.collection('users').doc(user.uid).set({
                         uid: user.uid,
-                        studentId: studentId, // 学籍番号も保存しておく
+                        studentId: studentId,
                         name: name,
                         faculty: faculty,
                         grade: grade,
-                        interests: [] // 最初は空
+                        interests: []
                     })
                     .then(() => {
                         alert('登録が完了しました！ログインしてください。');
                         showScreen('login-screen');
                     });
                 })
-                .catch((error) => {
-                    alert('登録に失敗しました。\n' + error.message);
-                });
+                .catch(error => alert('登録に失敗しました。\n' + error.message));
         }
 
         function handleLogin() {
-            const email = document.getElementById('login-id').value + '@g.kosen.ac.jp';
+            // ★★★ 要件: 完全なメールアドレスでログイン ★★★
+            const email = document.getElementById('login-id').value.trim();
             const password = document.getElementById('login-password').value;
+
+            if (!email || !password) {
+                alert('メールアドレスとパスワードを入力してください。');
+                return;
+            }
             
             auth.signInWithEmailAndPassword(email, password)
-                .catch((error) => {
-                    alert('学籍番号またはパスワードが間違っています。\n' + error.message);
-                });
+                .catch(error => alert('メールアドレスまたはパスワードが間違っています。\n' + error.message));
         }
 
         function handleLogout() {
             auth.signOut();
         }
 
-        // ===============================================
         // メイン画面の描画処理
-        // ===============================================
         function renderMainScreen() {
-            // Firestoreから自分のユーザー情報を取得して表示する
             db.collection('users').doc(loggedInUserId).get().then(doc => {
                 if (doc.exists) {
-                    const myData = doc.data();
-                    document.getElementById('welcome-message').textContent = `ようこそ、${myData.name}さん！`;
-                } else {
-                    document.getElementById('welcome-message').textContent = `ようこそ！`;
+                    document.getElementById('welcome-message').textContent = `ようこそ、${doc.data().name}さん！`;
                 }
             });
-            showTab('users'); // 初期タブはユーザー一覧
+            showTab('users');
         }
 
         // ★★★注意★★★
         // これ以降の関数はまだ正しく動作しません。次のステップでFirestoreを使うように書き換えます。
-        // 今はエラーが出ないように、仮の表示だけさせています。
         function renderUsers() {
-            console.log("renderUsersは次のステップで実装します");
             document.getElementById('user-list').innerHTML = "<p>ユーザー情報を読み込み中...</p>";
         }
-        
         function renderMatches() {
-            console.log("renderMatchesは次のステップで実装します");
             document.getElementById('match-list').innerHTML = "<p>マッチング情報を読み込み中...</p>";
         }
-
         function renderProfileEditor() {
-            console.log("renderProfileEditorは次のステップで実装します");
             document.getElementById('profile-interests-editor').innerHTML = "<p>プロフィール情報を読み込み中...</p>";
         }
-
         function handleLike(targetUserId) {
             alert("「いいね」機能は次のステップで実装します。");
         }
-
         function updateProfile() {
              alert("プロフィール更新機能は次のステップで実装します。");
         }
