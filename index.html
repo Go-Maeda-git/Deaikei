@@ -5,10 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>孤選 (Kosen)</title>
     <style>
-        /* CSS内の --tinder-pink などの変数名は変更しませんが、見た目は調整されます */
+        /* CSSはほぼ変更なし、アバター選択用のスタイルを追加 */
         :root { --theme-pink: #FD3A73; --bg-dark: #121212; --card-dark: #242424; --text-light: #FFFFFF; --text-muted: #B3B3B3; }
         html, body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: var(--bg-dark); color: var(--text-light); overflow: hidden; width: 100%; height: 100%; }
-        /* 他のCSSは変更なし */
         * { box-sizing: border-box; }
         .screen { display: none; width: 100%; height: 100%; flex-direction: column; }
         .screen.active { display: flex; }
@@ -39,7 +38,6 @@
         .login-container p { color: var(--text-muted); }
         .login-container input, .login-container select { width: 100%; max-width: 300px; border-radius: 25px; text-align: center; background-color: var(--card-dark); color: var(--text-light); border: 1px solid #444; padding: 12px; margin-bottom: 10px;}
         .login-container button { width: 100%; max-width: 300px; border-radius: 25px; background: linear-gradient(90deg, #FD297B, #FF655B); border: none; padding: 12px; color: white; font-weight: bold; }
-        #profile-pic-preview { width: 120px; height: 120px; border-radius: 50%; background-color: var(--card-dark); border: 2px dashed #555; margin: 1em auto; display: flex; justify-content: center; align-items: center; cursor: pointer; object-fit: cover; }
         .list-container { flex-grow: 1; overflow-y: auto; padding: 20px 20px 80px; }
         .list-container h2 { color: var(--theme-pink); }
         .match-item { display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #333; }
@@ -48,87 +46,44 @@
         .profile-edit-section button { background: var(--theme-pink); border: none; padding: 12px; font-weight: bold; border-radius: 25px; }
         .profile-edit-section .delete-button { background: #dc3545; }
         .profile-edit-section .logout-button { background: #6c757d; }
+        /* ▼▼▼ アバター選択用のスタイルを追加 ▼▼▼ */
+        #avatar-selection-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; max-width: 300px; margin: 1em auto; }
+        .avatar-option { width: 100%; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: border-color 0.2s; }
+        .avatar-option.selected { border-color: var(--theme-pink); }
     </style>
 </head>
 <body>
-    <div id="login-screen" class="screen active">
+    <div id="login-screen" class="screen active"><div class="login-container"><h1>孤選</h1><p>学校のメールアドレスでログイン/登録</p><input type="email" id="email-input" placeholder="sXXXXX@s.akashi.ac.jp"><button onclick="sendSignInLink()">認証メールを送信</button></div></div>
+    
+    <!-- ▼▼▼ プロフィール設定画面のHTMLをアバター選択式に変更 ▼▼▼ -->
+    <div id="profile-setup-screen" class="screen">
         <div class="login-container">
-            <!-- ▼▼▼ アプリ名を「孤選」に変更 ▼▼▼ -->
-            <h1>孤選</h1>
-            <p>学校のメールアドレスでログイン/登録</p>
-            <input type="email" id="email-input" placeholder="sXXXXX@s.akashi.ac.jp">
-            <button onclick="sendSignInLink()">認証メールを送信</button>
-            
-            <!-- ▼▼▼ 開発用のパスワードログインフォームを追加 ▼▼▼ -->
-            <div id="dev-login-form" style="margin-top: 30px; border-top: 1px solid #444; padding-top: 20px;">
-                <p style="font-size: 0.8em; color: #888;">開発者用：パスワードでログイン</p>
-                <input type="password" id="dev-password-input" placeholder="テストユーザーのパスワード">
-                <button onclick="handleDevLogin()" style="background: #444; margin-top: 10px;">テストログイン</button>
+            <h1>ようこそ！</h1><p>はじめにプロフィールを設定してください</p>
+            <p style="font-size: 0.9em; margin-top: 1.5em;">好きなアバターを選んでください</p>
+            <div id="avatar-selection-grid">
+                <!-- アバター画像がJSでここに挿入されます -->
             </div>
+            <input type="text" id="register-name" placeholder="ニックネーム">
+            <select id="register-faculty"><option value="機械工学科">M科</option><option value="電気情報工学科">E科</option><option value="都市システム工学科">C科</option><option value="建築学科">A科</option></select>
+            <select id="register-grade"><option value="1年">1年</option><option value="2年">2年</option><option value="3年">3年</option><option value="4年">4年</option><option value="5年">5年</option><option value="専攻科1年">専攻科1年</option><option value="専攻科2年">専攻科2年</option></select>
+            <button onclick="handleProfileSetup()" id="setup-button">登録して利用を開始する</button>
         </div>
     </div>
 
     <!-- 他のHTML部分は変更なし -->
-    <div id="profile-setup-screen" class="screen"><div class="login-container"><h1>ようこそ！</h1><p>はじめにプロフィールを設定してください</p><img id="profile-pic-preview" src="https://via.placeholder.com/120" onclick="document.getElementById('profile-pic-upload').click()"><input type="file" id="profile-pic-upload" accept="image/*" style="display: none;" onchange="previewImage(event)"><input type="text" id="register-name" placeholder="ニックネーム"><select id="register-faculty"><option value="機械工学科">M科</option><option value="電気情報工学科">E科</option><option value="都市システム工学科">C科</option><option value="建築学科">A科</option></select><select id="register-grade"><option value="1年">1年</option><option value="2年">2年</option><option value="3年">3年</option><option value="4年">4年</option><option value="5年">5年</option><option value="専攻科1年">専攻科1年</option><option value="専攻科2年">専攻科2年</option></select><button onclick="handleProfileSetup()" id="setup-button">登録して利用を開始する</button></div></div>
     <div id="main-screen" class="screen"><div class="app-container"><div id="card-stack"></div><div id="actions-area" class="actions"><div class="action-btn nope" onclick="handleNope()"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></div><div class="action-btn like" onclick="handleLikeClick()"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg></div></div></div><nav id="main-nav"></nav></div>
     <div id="matches-screen" class="screen"><div class="list-container"><h2>マッチング一覧</h2><div id="match-list"></div></div><nav id="matches-nav"></nav></div>
     <div id="profile-screen" class="screen"><div class="list-container"><div class="profile-edit-section"><h2>プロフィール編集</h2><div id="profile-interests-editor"></div><button onclick="updateProfile()">興味タグを更新</button></div><div class="profile-edit-section"><h2>アカウント設定</h2><button class="logout-button" onclick="handleLogout()">ログアウト</button><button class="delete-button" onclick="handleDeleteAccount()">アカウントを完全に削除する</button></div></div><nav id="profile-nav"></nav></div>
     
+    <!-- ▼▼▼ Firebase Storageのスクリプトを削除 ▼▼▼ -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
     <script>
         const firebaseConfig = { apiKey: "AIzaSyAcKf5BrhFFkv74WdaamqnrCY1qSRxsVjE", authDomain: "deaikei-kosen.firebaseapp.com", projectId: "deaikei-kosen", storageBucket: "deaikei-kosen.firebasestorage.app", messagingSenderId: "166298285211", appId: "1:166298285211:web:5381e5e419754e0376c23e" };
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
-        const storage = firebase.storage();
+        // const storage = firebase.storage(); // Storageは不要なので削除
     </script>
-    <script>
-        // --- JavaScript (変更箇所のみ抜粋) ---
-        // ... (大部分のJSは変更なし)
-        
-        // ▼▼▼ 開発用のパスワードログイン関数を新規追加 ▼▼▼
-        async function handleDevLogin() {
-            const email = document.getElementById('email-input').value.replace(/\s/g, '');
-            const password = document.getElementById('dev-password-input').value;
-            if (!email || !password) {
-                alert('テストログインにはメールアドレスとパスワードの両方が必要です。');
-                return;
-            }
-
-            try {
-                await auth.signInWithEmailAndPassword(email, password);
-                // 成功すれば、onAuthStateChangedが自動で画面遷移を処理します
-            } catch (error) {
-                alert('テストログインに失敗しました。\n' + error.message);
-            }
-        }
-        
-        // --- これ以降は前回のコードと同じです ---
-        let loggedInUserId = null, allUsers = [], currentUserIndex = 0;
-        const allInterests = ["プログラミング", "機械学習", "電子工作", "設計", "実験", "ロボコン", "デザイン", "映像制作", "バスケ", "サッカー", "テニス", "音楽", "バンド", "TOIC勉強中", "論文執筆", "起業したい", "ボランティア", "バイク"];
-        const navHTML = `<button onclick="showTab('main-screen')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12.75 2.25A2.25 2.25 0 0010.5 4.5v15a2.25 2.25 0 002.25 2.25h.518a.75.75 0 00.74-1.023l-.26-1.037a1.5 1.5 0 011.025-1.742 1.5 1.5 0 011.742 1.025l.26 1.037a.75.75 0 00.74 1.023h.518a2.25 2.25 0 002.25-2.25v-15a2.25 2.25 0 00-2.25-2.25H12.75zM12 4.5h6.75v15H12V4.5zM3.75 6A2.25 2.25 0 001.5 8.25v9A2.25 2.25 0 003.75 19.5h.518a.75.75 0 00.74-1.023l-.26-1.037a1.5 1.5 0 011.025-1.742 1.5 1.5 0 011.742 1.025l.26 1.037A.75.75 0 008.482 19.5h.518A2.25 2.25 0 0011.25 17.25v-9A2.25 2.25 0 009 6H3.75zM3 8.25h6.75v9H3v-9z" /></svg></button><button onclick="showTab('matches-screen')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M4.848 2.771A49.144 49.144 0 0112 2.25c2.43 0 4.817.178 7.152.52 1.978.292 3.348 2.024 3.348 3.97v6.02c0 1.946-1.37 3.678-3.348 3.97a48.901 48.901 0 01-3.476.383.39.39 0 00-.297.17l-2.755 4.133a.75.75 0 01-1.248 0l-2.755-4.133a.39.39 0 00-.297-.17 48.9 48.9 0 01-3.476-.384c-1.978-.29-3.348-2.024-3.348-3.97V6.741c0-1.946 1.37-3.68 3.348-3.97zM6.75 8.25a.75.75 0 01.75-.75h9a.75.75 0 010 1.5h-9a.75.75 0 01-.75-.75zm.75 2.25a.75.75 0 000 1.5H12a.75.75 0 000-1.5H7.5z" clip-rule="evenodd" /></svg></button><button onclick="showTab('profile-screen')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z" clip-rule="evenodd" /></svg></button>`;
-        document.querySelectorAll('nav').forEach(nav => nav.innerHTML = navHTML);
-        function showTab(screenId) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); const screen = document.getElementById(screenId); if (screen) screen.classList.add('active'); document.querySelectorAll('nav button').forEach(btn => btn.classList.remove('active')); const navs = document.querySelectorAll('nav'); if (screenId === 'main-screen') navs.forEach(nav => nav.children[0].classList.add('active')); if (screenId === 'matches-screen') navs.forEach(nav => nav.children[1].classList.add('active')); if (screenId === 'profile-screen') navs.forEach(nav => nav.children[2].classList.add('active')); if (screenId === 'matches-screen') renderMatches(); if (screenId === 'profile-screen') renderProfileEditor(); }
-        window.onload = function() { if (auth.isSignInWithEmailLink(window.location.href)) { handleEmailLinkSignIn(); } else { showTab('login-screen'); } };
-        auth.onAuthStateChanged(async (user) => { if (user) { const userDoc = await db.collection('users').doc(user.uid).get(); if (userDoc.exists) { loggedInUserId = user.uid; loadUsersForCards(); showTab('main-screen'); } else { showTab('profile-setup-screen'); } } else { loggedInUserId = null; showTab('login-screen'); } });
-        async function handleEmailLinkSignIn() { let email = window.localStorage.getItem('emailForSignIn'); if (!email) { email = window.prompt('認証を完了するため、メールアドレスを再度入力してください。'); } try { await auth.signInWithEmailLink(email, window.location.href); window.localStorage.removeItem('emailForSignIn'); } catch (error) { alert('ログインに失敗しました: ' + error.message); showTab('login-screen'); } }
-        function sendSignInLink() { const email = document.getElementById('email-input').value.replace(/\s/g, ''); if (!email.endsWith('@s.akashi.ac.jp')) { alert('登録できるのは "@s.akashi.ac.jp" のメールアドレスのみです。'); return; } auth.sendSignInLinkToEmail(email, { url: window.location.href, handleCodeInApp: true }).then(() => { window.localStorage.setItem('emailForSignIn', email); alert(`認証用のリンクを ${email} に送信しました。メールを確認してください。`); }).catch(error => alert('メールの送信に失敗しました: ' + error.message)); }
-        function handleLogout() { auth.signOut(); }
-        function previewImage(event) { const reader = new FileReader(); reader.onload = () => document.getElementById('profile-pic-preview').src = reader.result; reader.readAsDataURL(event.target.files[0]); }
-        async function handleProfileSetup() { const name = document.getElementById('register-name').value.trim(); const file = document.getElementById('profile-pic-upload').files[0]; if (!name || !file) { alert('プロフィール画像とニックネームは必須です。'); return; } const setupButton = document.getElementById('setup-button'); setupButton.disabled = true; setupButton.textContent = '登録中...'; const user = auth.currentUser; try { const photoURL = await uploadProfileImage(user.uid, file); await db.collection('users').doc(user.uid).set({ uid: user.uid, name: name, photoURL: photoURL, faculty: document.getElementById('register-faculty').value, grade: document.getElementById('register-grade').value, interests: [] }); } catch (error) { alert('登録に失敗しました: ' + error.message); } finally { setupButton.disabled = false; setupButton.textContent = '登録して利用を開始する'; } }
-        async function uploadProfileImage(userId, file) { const filePath = `profileImages/${userId}/profile.jpg`; const fileRef = storage.ref(filePath); await fileRef.put(file); return await fileRef.getDownloadURL(); }
-        async function loadUsersForCards() { const myLikesSnapshot = await db.collection('likes').where('from', '==', loggedInUserId).get(); const swipedUserIds = myLikesSnapshot.docs.map(doc => doc.data().to); const usersSnapshot = await db.collection('users').get(); allUsers = usersSnapshot.docs.map(doc => doc.data()).filter(user => user.uid !== loggedInUserId && !swipedUserIds.includes(user.uid)); currentUserIndex = 0; renderCurrentCard(); }
-        function renderCurrentCard() { const stack = document.getElementById('card-stack'); stack.innerHTML = ''; if (currentUserIndex >= allUsers.length) { stack.innerHTML = '<h3 id="no-more-cards">今日の相手はここまでです。</h3>'; return; } const user = allUsers[currentUserIndex]; stack.innerHTML = `<div class="profile-card" data-user-id="${user.uid}"><img src="${user.photoURL || 'https://via.placeholder.com/400x600'}" class="profile-pic"><div class="profile-info"><div class="profile-header"><h3>${user.name}</h3><button class="report-btn" onclick="reportUser('${user.uid}', '${user.name}')">•••</button></div><p>${user.faculty}・${user.grade}</p><div class="profile-tags">${(user.interests || []).map(tag => `<div class="profile-tag">${tag}</div>`).join('')}</div></div></div>`; }
-        function handleNope() { if (currentUserIndex >= allUsers.length) return; currentUserIndex++; renderCurrentCard(); }
-        async function handleLikeClick() { if (currentUserIndex >= allUsers.length) return; const targetUser = allUsers[currentUserIndex]; await db.collection('likes').add({ from: loggedInUserId, to: targetUser.uid }); const query = db.collection('likes').where('from', '==', targetUser.uid).where('to', '==', loggedInUserId); const result = await query.get(); if (!result.empty) { alert(`🎉 ${targetUser.name}さんとマッチングしました！`); } currentUserIndex++; renderCurrentCard(); }
-        async function reportUser(userId, userName) { const reason = prompt(`"${userName}"さんをどの理由で通報しますか？ (例: 不適切なプロフィール画像)`); if (reason) { await db.collection('reports').add({ reportedUserId: userId, reporterId: loggedInUserId, reason: reason, timestamp: new Date() }); alert('通報が送信されました。ご協力ありがとうございます。'); handleNope(); } }
-        async function handleDeleteAccount() { const user = auth.currentUser; if (!user) return; if (!confirm("本当にアカウントを削除しますか？")) return; try { await db.collection('users').doc(user.uid).delete(); const myLikes = await db.collection('likes').where('from', '==', user.uid).get(); for (const doc of myLikes.docs) await doc.ref.delete(); const likedBy = await db.collection('likes').where('to', '==', user.uid).get(); for (const doc of likedBy.docs) await doc.ref.delete(); await storage.ref(`profileImages/${user.uid}/profile.jpg`).delete().catch(e => console.log("画像がないか、削除に失敗しました")); await user.delete(); alert('アカウントが削除されました。'); } catch (e) { console.error(e); alert('アカウントの削除に失敗しました。'); } }
-        async function renderMatches() { const matchList = document.getElementById('match-list'); matchList.innerHTML = ""; const myLikes = (await db.collection('likes').where('from', '==', loggedInUserId).get()).docs.map(d => d.data().to); const likedBy = (await db.collection('likes').where('to', '==', loggedInUserId).get()).docs.map(d => d.data().from); const matchedIds = myLikes.filter(id => likedBy.includes(id)); if (matchedIds.length === 0) { matchList.innerHTML = '<p>まだマッチングしたユーザーはいません。</p>'; return; } const users = await db.collection('users').where('uid', 'in', matchedIds).get(); users.forEach(doc => { const user = doc.data(); matchList.innerHTML += `<div class="match-item"><img src="${user.photoURL || 'https://via.placeholder.com/60'}" class="match-avatar"><div class="match-info"><h4>${user.name}</h4><p>${user.faculty}・${user.grade}</p></div></div>`; }); }
-        function renderProfileEditor() { const editor = document.getElementById('profile-interests-editor'); db.collection('users').doc(loggedInUserId).get().then(doc => { if (!doc.exists) return; const myInterests = doc.data().interests || []; editor.innerHTML = ''; allInterests.forEach(interest => { editor.innerHTML += `<label><input type="checkbox" value="${interest}" ${myInterests.includes(interest) ? 'checked' : ''}> ${interest}</label>`; }); }); }
-        function updateProfile() { const selected = []; document.querySelectorAll('#profile-interests-editor input:checked').forEach(c => selected.push(c.value)); db.collection('users').doc(loggedInUserId).update({ interests: selected }).then(() => alert('プロフィールを更新しました！')); }
-    </script>
-</body>
-</html>
+    <s
