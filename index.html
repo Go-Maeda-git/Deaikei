@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Uni-Link プロトタイプ (高専版)</title>
     <style>
-        /* CSSはほぼ変更なし */
+        /* CSSはほぼ変更なし、削除ボタン用のスタイルを追加 */
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; line-height: 1.6; margin: 0; padding: 20px; background-color: #f4f7f6; color: #333; }
         .container { max-width: 800px; margin: 0 auto; background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         h1, h2 { text-align: center; color: #0056b3; }
@@ -18,7 +18,9 @@
         button:disabled { background-color: #ccc; cursor: not-allowed; }
         .secondary-button { background-color: #6c757d; margin-top: 10px; }
         .secondary-button:hover { background-color: #5a6268; }
-        .logout-button { background-color: #dc3545; width: auto; float: right;}
+        .logout-button { background-color: #6c757d; } /* ログアウトボタンの色を少し変更 */
+        .delete-button { background-color: #dc3545; margin-top: 1em; } /* 削除ボタン用のスタイル */
+        .delete-button:hover { background-color: #c82333; }
         .user-list, .match-list { list-style: none; padding: 0; }
         .user-card { border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 8px; background: #fff; }
         .user-card h3 { margin-top: 0; }
@@ -34,7 +36,7 @@
 <body>
 
     <div class="container">
-        <!-- ▼▼▼ ログイン/登録画面を統合・簡略化 ▼▼▼ -->
+        <!-- ログイン/登録画面は変更なし -->
         <div id="login-screen" class="screen active">
             <h1>Uni-Link</h1>
             <h2>高専内交流促進アプリ</h2>
@@ -42,8 +44,6 @@
             <input type="email" id="email-input" placeholder="学校のメールアドレス">
             <button onclick="sendSignInLink()">認証メールを送信</button>
         </div>
-
-        <!-- ▼▼▼ 初回ログイン時のプロフィール設定画面を新設 ▼▼▼ -->
         <div id="profile-setup-screen" class="screen">
             <h1>ようこそ！</h1>
             <p class="description">初回登録のため、プロフィールを設定してください。</p>
@@ -59,8 +59,6 @@
             </select>
             <button onclick="handleProfileSetup()">登録して利用を開始する</button>
         </div>
-
-        <!-- メイン画面（変更なし） -->
         <div id="main-screen" class="screen">
             <button class="logout-button" onclick="handleLogout()">ログアウト</button>
             <h1 id="welcome-message">ようこそ！</h1>
@@ -71,10 +69,16 @@
             </nav>
             <div id="users-tab"><ul id="user-list" class="user-list"></ul></div>
             <div id="matches-tab" style="display: none;"><h2>マッチング成立！</h2><p>相互に「いいね」したユーザーです。</p><ul id="match-list" class="match-list"></ul></div>
+            <!-- ▼▼▼ プロフィール編集画面にアカウント削除ボタンを追加 ▼▼▼ -->
             <div id="profile-tab" style="display: none;">
                 <h2>プロフィール編集</h2>
                 <p><strong>興味・関心タグ</strong></p>
-                <div id="profile-interests-editor"></div><button onclick="updateProfile()">興味タグを更新</button>
+                <div id="profile-interests-editor"></div>
+                <button onclick="updateProfile()">興味タグを更新</button>
+                <hr style="margin: 2em 0;">
+                <h2>アカウント設定</h2>
+                <p class="description">アカウントを削除すると、全てのデータが消去され、元に戻すことはできません。</p>
+                <button class="delete-button" onclick="handleDeleteAccount()">アカウントを完全に削除する</button>
             </div>
         </div>
     </div>
@@ -103,40 +107,30 @@
         let loggedInUserId = null;
         const allInterests = ["プログラミング", "機械学習", "電子工作", "設計", "実験", "ロボコン", "デザイン", "映像制作", "バスケ", "サッカー", "テニス", "音楽", "バンド", "TOIC勉強中", "論文執筆", "起業したい", "ボランティア", "バイク"];
         
-        // ▼▼▼ ページ読み込み時の処理をメールリンク認証用に変更 ▼▼▼
+        // ページ読み込み時の処理
         window.onload = function() {
-            // メールリンクからのアクセスかチェック
             if (auth.isSignInWithEmailLink(window.location.href)) {
                 let email = window.localStorage.getItem('emailForSignIn');
                 if (!email) {
-                    // 何らかの理由でメールアドレスが保存されていない場合、ユーザーに再入力を促す
                     email = window.prompt('認証を完了するため、メールアドレスを再度入力してください。');
                 }
-                
-                // メールリンクを使ってログイン処理を完了させる
                 auth.signInWithEmailLink(email, window.location.href)
                     .then(async (result) => {
-                        window.localStorage.removeItem('emailForSignIn'); // 一時保存したメールを削除
+                        window.localStorage.removeItem('emailForSignIn');
                         const user = result.user;
-                        
-                        // このユーザーが新規登録かどうかをFirestoreで確認
                         const userDoc = await db.collection('users').doc(user.uid).get();
                         if (!userDoc.exists) {
-                            // 新規ユーザーなので、プロフィール設定画面を表示
                             showScreen('profile-setup-screen');
-                        } else {
-                            // 既存ユーザーなので、メイン画面を表示（onAuthStateChangedが後で処理）
                         }
                     })
                     .catch(error => alert('ログインに失敗しました: ' + error.message));
             }
         };
 
-        // ログイン状態の監視（変更なし）
+        // ログイン状態の監視
         auth.onAuthStateChanged(user => {
             if (user) {
                 loggedInUserId = user.uid;
-                // プロフィールがまだ設定されていない場合は、onAuthStateChangedでは何もしない
                 db.collection('users').doc(user.uid).get().then(doc => {
                     if(doc.exists) {
                         showScreen('main-screen');
@@ -149,60 +143,91 @@
             }
         });
 
-        // ▼▼▼ 認証メールを送信する関数 ▼▼▼
+        // 認証メールを送信
         function sendSignInLink() {
             const email = document.getElementById('email-input').value.replace(/\s/g, '');
-            if (!email) {
-                alert('メールアドレスを入力してください。'); return;
-            }
-            if (!email.endsWith('@s.akashi.ac.jp')) {
-                alert('登録できるのは "@s.akashi.ac.jp" のメールアドレスのみです。'); return;
-            }
-
-            const actionCodeSettings = {
-                url: window.location.href, // 認証後に戻ってくるURL
-                handleCodeInApp: true
-            };
-
+            if (!email) { alert('メールアドレスを入力してください。'); return; }
+            if (!email.endsWith('@s.akashi.ac.jp')) { alert('登録できるのは "@s.akashi.ac.jp" のメールアドレスのみです。'); return; }
+            const actionCodeSettings = { url: window.location.href, handleCodeInApp: true };
             auth.sendSignInLinkToEmail(email, actionCodeSettings)
                 .then(() => {
-                    // メール送信後、ユーザーがブラウザを閉じても大丈夫なようにメールアドレスを保存
                     window.localStorage.setItem('emailForSignIn', email);
                     alert(`認証用のリンクを ${email} に送信しました。メールを確認してください。`);
-                })
-                .catch(error => alert('メールの送信に失敗しました: ' + error.message));
+                }).catch(error => alert('メールの送信に失敗しました: ' + error.message));
         }
 
-        // ▼▼▼ 初回プロフィールを登録する関数 ▼▼▼
+        // 初回プロフィールを登録
         function handleProfileSetup() {
             const currentUser = auth.currentUser;
-            if (!currentUser) {
-                alert('ログイン情報が見つかりません。'); return;
-            }
-            
+            if (!currentUser) { alert('ログイン情報が見つかりません。'); return; }
             const name = document.getElementById('register-name').value.trim();
             const faculty = document.getElementById('register-faculty').value;
             const grade = document.getElementById('register-grade').value;
-
             if (!name) { alert('ニックネームを入力してください。'); return; }
-
             db.collection('users').doc(currentUser.uid).set({
                 uid: currentUser.uid, name: name, faculty: faculty,
                 grade: grade, interests: []
             }).then(() => {
                 alert('登録が完了しました！');
                 showScreen('main-screen');
-                renderMainScreen(); // メイン画面の描画をキック
+                renderMainScreen();
             }).catch(error => alert('プロフィールの登録に失敗しました: ' + error.message));
         }
         
+        // ログアウト
         function handleLogout() { auth.signOut(); }
-        function renderMainScreen() { /* ... 変更なし ... */ }
-        function renderUsers() { /* ... 変更なし ... */ }
-        async function handleLike(targetUserId) { /* ... 変更なし ... */ }
-        async function renderMatches() { /* ... 変更なし ... */ }
-        function renderProfileEditor() { /* ... 変更なし ... */ }
-        function updateProfile() { /* ... 変更なし ... */ }
+        
+        // ▼▼▼ アカウント削除の関数を新規追加 ▼▼▼
+        async function handleDeleteAccount() {
+            const currentUser = auth.currentUser;
+            if (!currentUser) {
+                alert('ログインしていません。');
+                return;
+            }
+
+            // ユーザーに最終確認を行う
+            if (!confirm("本当にアカウントを削除しますか？この操作は元に戻せません。")) {
+                return; // キャンセルされたら何もしない
+            }
+
+            try {
+                // Firestoreから関連データを削除する
+                // 1. 自分のプロフィール情報を削除
+                await db.collection('users').doc(currentUser.uid).delete();
+                
+                // 2. 自分が送った「いいね」を全て削除
+                const myLikesQuery = db.collection('likes').where('from', '==', currentUser.uid);
+                const myLikesSnapshot = await myLikesQuery.get();
+                for (const doc of myLikesSnapshot.docs) {
+                    await doc.ref.delete();
+                }
+
+                // 3. 自分に送られた「いいね」を全て削除
+                const likedByQuery = db.collection('likes').where('to', '==', currentUser.uid);
+                const likedBySnapshot = await likedByQuery.get();
+                for (const doc of likedBySnapshot.docs) {
+                    await doc.ref.delete();
+                }
+
+                // 最後に、Authenticationからユーザーを削除する
+                await currentUser.delete();
+
+                alert('アカウントが正常に削除されました。');
+                // onAuthStateChangedが自動でログアウト状態を検知し、ログイン画面に遷移する
+
+            } catch (error) {
+                console.error("アカウント削除エラー:", error);
+                alert("アカウントの削除に失敗しました。\nエラー: " + error.message);
+            }
+        }
+        
+        // --- これ以降の関数は変更なし ---
+        function renderMainScreen() { /* ... */ }
+        function renderUsers() { /* ... */ }
+        async function handleLike(targetUserId) { /* ... */ }
+        async function renderMatches() { /* ... */ }
+        function renderProfileEditor() { /* ... */ }
+        function updateProfile() { /* ... */ }
 
         // 省略した関数の本体（コピー用）
         function showScreen(screenId) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(screenId).classList.add('active'); }
