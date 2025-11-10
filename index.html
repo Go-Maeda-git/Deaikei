@@ -101,7 +101,6 @@
         const navHTML = `<button onclick="showTab('main-screen')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12.75 2.25A2.25 2.25 0 0010.5 4.5v15a2.25 2.25 0 002.25 2.25h.518a.75.75 0 00.74-1.023l-.26-1.037a1.5 1.5 0 011.025-1.742 1.5 1.5 0 011.742 1.025l.26 1.037a.75.75 0 00.74 1.023h.518a2.25 2.25 0 002.25-2.25v-15a2.25 2.25 0 00-2.25-2.25H12.75zM12 4.5h6.75v15H12V4.5zM3.75 6A2.25 2.25 0 001.5 8.25v9A2.25 2.25 0 003.75 19.5h.518a.75.75 0 00.74-1.023l-.26-1.037a1.5 1.5 0 011.025-1.742 1.5 1.5 0 011.742 1.025l.26 1.037A.75.75 0 008.482 19.5h.518A2.25 2.25 0 0011.25 17.25v-9A2.25 2.25 0 009 6H3.75zM3 8.25h6.75v9H3v-9z" /></svg></button><button onclick="showTab('matches-screen')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M4.848 2.771A49.144 49.144 0 0112 2.25c2.43 0 4.817.178 7.152.52 1.978.292 3.348 2.024 3.348 3.97v6.02c0 1.946-1.37 3.678-3.348 3.97a48.901 48.901 0 01-3.476.383.39.39 0 00-.297.17l-2.755 4.133a.75.75 0 01-1.248 0l-2.755-4.133a.39.39 0 00-.297-.17 48.9 48.9 0 01-3.476-.384c-1.978-.29-3.348-2.024-3.348-3.97V6.741c0-1.946 1.37-3.68 3.348-3.97zM6.75 8.25a.75.75 0 01.75-.75h9a.75.75 0 010 1.5h-9a.75.75 0 01-.75-.75zm.75 2.25a.75.75 0 000 1.5H12a.75.75 0 000-1.5H7.5z" clip-rule="evenodd" /></svg></button><button onclick="showTab('profile-screen')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z" clip-rule="evenodd" /></svg></button>`;
         document.querySelectorAll('nav').forEach(nav => nav.innerHTML = navHTML);
         
-        // ★★★ 変更点1: アバターのリストを更新 ★★★
         const avatarUrls = [
             '/Deaikei/images/account.png', 
             '/Deaikei/images/astronaut.png', 
@@ -140,42 +139,27 @@
             if (screenId === 'profile-screen') renderProfileEditor();
         }
 
-        // ★★★ 変更点2: プロフィール設定処理を修正 ★★★
         async function handleProfileSetup() {
             const name = document.getElementById('register-name').value.trim();
-            // ニックネームは必須
             if (!name) { 
                 alert('ニックネームは必須です。'); 
                 return; 
             }
-
             const selectedAvatar = document.querySelector('#avatar-selection-grid .avatar-option.selected');
-            let avatarUrl;
-
-            if (selectedAvatar) {
-                // アバターが選択されている場合は、そのURLを使用
-                avatarUrl = selectedAvatar.dataset.url;
-            } else {
-                // アバターが選択されていない場合は、デフォルトのURLを設定
-                avatarUrl = '/Deaikei/images/user (1).png';
-            }
-
+            let avatarUrl = selectedAvatar ? selectedAvatar.dataset.url : '/Deaikei/images/user (1).png';
             const user = auth.currentUser;
             if (!user) return;
-
             const studentId = user.email.split('@')[0];
-            
             await db.collection('users').doc(user.uid).set({
-                uid: user.uid, 
-                studentId: studentId, 
-                name: name,
-                photoURL: avatarUrl, // 決定したアバターURLを使用
+                uid: user.uid, studentId: studentId, name: name,
+                photoURL: avatarUrl,
                 faculty: document.getElementById('register-faculty').value,
                 grade: document.getElementById('register-grade').value, 
                 interests: []
             });
         }
         
+        // ★★★ 修正点1: カード表示時にphotoURLがない場合の対策を追加 ★★★
         function renderCurrentCard() {
             const stack = document.getElementById('card-stack');
             const actions = document.getElementById('actions-area');
@@ -188,9 +172,13 @@
             
             actions.style.display = 'flex';
             const user = allUsers[currentUserIndex];
+            
+            // user.photoURLが存在しない場合、デフォルトのアイコンパスを指定する
+            const imageUrl = user.photoURL || '/Deaikei/images/user (1).png';
+
             stack.innerHTML = `
                 <div class="profile-card" data-user-id="${user.uid}">
-                    <img src="${user.photoURL}" class="profile-pic">
+                    <img src="${imageUrl}" class="profile-pic">
                     <div class="profile-info">
                         <div class="profile-header">
                             <h3>${user.name} <small>(${user.studentId || ''})</small></h3>
@@ -202,6 +190,7 @@
                 </div>`;
         }
 
+        // ★★★ 修正点2: マッチ一覧表示時にphotoURLがない場合の対策を追加 ★★★
         async function renderMatches() {
             if (!loggedInUserId) return;
             const matchList = document.getElementById('match-list');
@@ -250,14 +239,17 @@
                 userSnapshots.forEach(snapshot => {
                     snapshot.forEach(doc => {
                         const user = doc.data();
-                        if (!user || !user.uid || !user.name || !user.photoURL) {
-                            console.warn("不完全なユーザーデータが見つかりました。スキップします:", user);
+                        if (!user || !user.uid || !user.name) { // photoURLのチェックを削除
+                            console.warn("必要情報が欠けているユーザーデータが見つかりました。スキップします:", user);
                             return;
                         }
 
+                        // user.photoURLが存在しない場合、デフォルトのアイコンパスを指定する
+                        const imageUrl = user.photoURL || '/Deaikei/images/user (1).png';
+
                         matchList.innerHTML += `
-                            <div class="match-item" onclick="openChat('${user.uid}', '${user.name}', '${user.photoURL}')">
-                                <img src="${user.photoURL}" class="match-avatar">
+                            <div class="match-item" onclick="openChat('${user.uid}', '${user.name}', '${imageUrl}')">
+                                <img src="${imageUrl}" class="match-avatar">
                                 <div class="match-info">
                                     <h4>${user.name} <small>(${user.studentId || ''})</small></h4>
                                     <p>${user.faculty}・${user.grade}</p>
