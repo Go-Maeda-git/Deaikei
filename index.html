@@ -166,7 +166,6 @@
             matchList.innerHTML = "マッチング情報を読み込んでいます...";
             
             try {
-                // 1. 自分がLikeした相手の全リストを取得
                 const myLikesSnapshot = await db.collection('likes').where('from', '==', loggedInUserId).get();
                 const likedByMe = myLikesSnapshot.docs.map(doc => doc.data().to);
                 
@@ -175,26 +174,19 @@
                     return;
                 }
 
-                // 2. likedByMeを10件ずつのチャンクに分割して、相手からのLikeを並行して検索
                 const matchedIds = [];
                 const promises = [];
                 
                 for (let i = 0; i < likedByMe.length; i += 10) {
-                    const chunk = likedByMe.slice(i, i + 10); // 10件ずつ切り出す
-                    const q = db.collection('likes')
-                        .where('to', '==', loggedInUserId)
-                        .where('from', 'in', chunk); // 10件以下の配列で検索
+                    const chunk = likedByMe.slice(i, i + 10);
+                    const q = db.collection('likes').where('to', '==', loggedInUserId).where('from', 'in', chunk);
                     promises.push(q.get());
                 }
 
-                // すべての検索を並行して実行し、結果を待つ
                 const snapshots = await Promise.all(promises);
 
-                // すべての結果からマッチしたIDを収集する
                 snapshots.forEach(snapshot => {
-                    snapshot.forEach(doc => {
-                        matchedIds.push(doc.data().from);
-                    });
+                    snapshot.forEach(doc => { matchedIds.push(doc.data().from); });
                 });
 
                 if (matchedIds.length === 0) {
@@ -202,10 +194,7 @@
                     return;
                 }
 
-                // 3. マッチしたユーザーのプロフィール情報を取得して表示 (ここでもin句の上限を考慮)
-                const finalUsersHtml = [];
                 const userPromises = [];
-
                 for (let i = 0; i < matchedIds.length; i += 10) {
                     const chunk = matchedIds.slice(i, i + 10);
                     const q = db.collection('users').where('uid', 'in', chunk);
@@ -214,11 +203,20 @@
 
                 const userSnapshots = await Promise.all(userPromises);
                 
-                matchList.innerHTML = ""; // 一旦クリア
+                matchList.innerHTML = "";
                 
                 userSnapshots.forEach(snapshot => {
                     snapshot.forEach(doc => {
                         const user = doc.data();
+
+                        // ▼▼▼ ここに安全確認コードを追加しました ▼▼▼
+                        // ユーザー情報が不完全な場合は、このユーザーをリストに表示しない
+                        if (!user || !user.uid || !user.name || !user.photoURL) {
+                            console.warn("不完全なユーザーデータが見つかりました。スキップします:", user);
+                            return; // forEachの現在のループを抜ける
+                        }
+                        // ▲▲▲ 安全確認ここまで ▲▲▲
+
                         matchList.innerHTML += `
                             <div class="match-item" onclick="openChat('${user.uid}', '${user.name}', '${user.photoURL}')">
                                 <img src="${user.photoURL}" class="match-avatar">
@@ -231,7 +229,7 @@
                 });
                 
                 if (matchList.innerHTML === "") {
-                    matchList.innerHTML = "マッチング相手の情報を取得できませんでした。";
+                    matchList.innerHTML = "表示できるマッチング相手がいません。";
                 }
 
             } catch (error) {
@@ -240,28 +238,19 @@
             }
         }
         
-        // ▼▼▼ この関数をまるごと置き換えてください ▼▼▼
-function openChat(targetUserId, targetUserName, targetUserPhotoURL) {
-    // ▼▼▼ デバッグと安全確認のためのコードをここに追加 ▼▼▼
-    console.log("チャット開始試行 => 自分のUID:", loggedInUserId, "相手のUID:", targetUserId);
-
-    // 安全確認：どちらかのUIDが存在しない場合は、処理を中断してエラーを通知する
-    if (!loggedInUserId || !targetUserId) {
-        alert("エラー: ユーザー情報が不完全なため、チャットを開始できません。ページを再読み込みしてください。");
-        console.error("チャットを開始できません。UIDがありません。", { myUid: loggedInUserId, targetUid: targetUserId });
-        return; // ここで処理を中断
-    }
-    // ▲▲▲ ここまで追加 ▲▲▲
-
-    currentChatRoomId = [loggedInUserId, targetUserId].sort().join('_');
-    
-    // 生成されたチャットルームIDをコンソールで確認
-    console.log("生成されたChatRoomID:", currentChatRoomId);
-
-    document.getElementById('chat-partner-name').textContent = targetUserName;
-    showTab('chat-screen');
-    renderMessages(currentChatRoomId);
-}
+        function openChat(targetUserId, targetUserName, targetUserPhotoURL) {
+            console.log("チャット開始試行 => 自分のUID:", loggedInUserId, "相手のUID:", targetUserId);
+            if (!loggedInUserId || !targetUserId) {
+                alert("エラー: ユーザー情報が不完全なため、チャットを開始できません。ページを再読み込みしてください。");
+                console.error("チャットを開始できません。UIDがありません。", { myUid: loggedInUserId, targetUid: targetUserId });
+                return;
+            }
+            currentChatRoomId = [loggedInUserId, targetUserId].sort().join('_');
+            console.log("生成されたChatRoomID:", currentChatRoomId);
+            document.getElementById('chat-partner-name').textContent = targetUserName;
+            showTab('chat-screen');
+            renderMessages(currentChatRoomId);
+        }
 
         function renderMessages(chatRoomId) {
             const messagesContainer = document.getElementById('messages-container');
