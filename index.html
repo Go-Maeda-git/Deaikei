@@ -159,7 +159,7 @@
             });
         }
         
-        // ★★★ 修正点1: カード表示時にphotoURLがない場合の対策を追加 ★★★
+        // ★★★ 修正点1: プロフィールカードに学籍番号を表示 (変更なし、確認のみ) ★★★
         function renderCurrentCard() {
             const stack = document.getElementById('card-stack');
             const actions = document.getElementById('actions-area');
@@ -172,8 +172,6 @@
             
             actions.style.display = 'flex';
             const user = allUsers[currentUserIndex];
-            
-            // user.photoURLが存在しない場合、デフォルトのアイコンパスを指定する
             const imageUrl = user.photoURL || '/Deaikei/images/user (1).png';
 
             stack.innerHTML = `
@@ -190,7 +188,7 @@
                 </div>`;
         }
 
-        // ★★★ 修正点2: マッチ一覧表示時にphotoURLがない場合の対策を追加 ★★★
+        // ★★★ 修正点2: マッチ一覧に学籍番号を表示し、チャット画面へ学籍番号を渡す ★★★
         async function renderMatches() {
             if (!loggedInUserId) return;
             const matchList = document.getElementById('match-list');
@@ -215,10 +213,7 @@
                 }
 
                 const snapshots = await Promise.all(promises);
-
-                snapshots.forEach(snapshot => {
-                    snapshot.forEach(doc => { matchedIds.push(doc.data().from); });
-                });
+                snapshots.forEach(snapshot => { snapshot.forEach(doc => { matchedIds.push(doc.data().from); }); });
 
                 if (matchedIds.length === 0) {
                     matchList.innerHTML = "まだマッチングした相手がいません。";
@@ -233,22 +228,21 @@
                 }
 
                 const userSnapshots = await Promise.all(userPromises);
-                
                 matchList.innerHTML = "";
                 
                 userSnapshots.forEach(snapshot => {
                     snapshot.forEach(doc => {
                         const user = doc.data();
-                        if (!user || !user.uid || !user.name) { // photoURLのチェックを削除
+                        if (!user || !user.uid || !user.name) {
                             console.warn("必要情報が欠けているユーザーデータが見つかりました。スキップします:", user);
                             return;
                         }
 
-                        // user.photoURLが存在しない場合、デフォルトのアイコンパスを指定する
                         const imageUrl = user.photoURL || '/Deaikei/images/user (1).png';
 
+                        // onclickイベントに user.studentId を追加
                         matchList.innerHTML += `
-                            <div class="match-item" onclick="openChat('${user.uid}', '${user.name}', '${imageUrl}')">
+                            <div class="match-item" onclick="openChat('${user.uid}', '${user.name}', '${imageUrl}', '${user.studentId || ''}')">
                                 <img src="${imageUrl}" class="match-avatar">
                                 <div class="match-info">
                                     <h4>${user.name} <small>(${user.studentId || ''})</small></h4>
@@ -268,7 +262,8 @@
             }
         }
         
-        function openChat(targetUserId, targetUserName, targetUserPhotoURL) {
+        // ★★★ 修正点3: チャットヘッダーに学籍番号を表示するよう修正 ★★★
+        function openChat(targetUserId, targetUserName, targetUserPhotoURL, targetUserStudentId) {
             console.log("チャット開始試行 => 自分のUID:", loggedInUserId, "相手のUID:", targetUserId);
             if (!loggedInUserId || !targetUserId) {
                 alert("エラー: ユーザー情報が不完全なため、チャットを開始できません。ページを再読み込みしてください。");
@@ -277,7 +272,10 @@
             }
             currentChatRoomId = [loggedInUserId, targetUserId].sort().join('_');
             console.log("生成されたChatRoomID:", currentChatRoomId);
-            document.getElementById('chat-partner-name').textContent = targetUserName;
+            
+            // ヘッダーに名前と学籍番号を設定
+            document.getElementById('chat-partner-name').textContent = `${targetUserName} (${targetUserStudentId || ''})`;
+            
             showTab('chat-screen');
             renderMessages(currentChatRoomId);
         }
