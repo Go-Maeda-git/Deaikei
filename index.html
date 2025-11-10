@@ -240,12 +240,28 @@
             }
         }
         
-        function openChat(targetUserId, targetUserName, targetUserPhotoURL) {
-            currentChatRoomId = [loggedInUserId, targetUserId].sort().join('_');
-            document.getElementById('chat-partner-name').textContent = targetUserName;
-            showTab('chat-screen');
-            renderMessages(currentChatRoomId);
-        }
+        // ▼▼▼ この関数をまるごと置き換えてください ▼▼▼
+function openChat(targetUserId, targetUserName, targetUserPhotoURL) {
+    // ▼▼▼ デバッグと安全確認のためのコードをここに追加 ▼▼▼
+    console.log("チャット開始試行 => 自分のUID:", loggedInUserId, "相手のUID:", targetUserId);
+
+    // 安全確認：どちらかのUIDが存在しない場合は、処理を中断してエラーを通知する
+    if (!loggedInUserId || !targetUserId) {
+        alert("エラー: ユーザー情報が不完全なため、チャットを開始できません。ページを再読み込みしてください。");
+        console.error("チャットを開始できません。UIDがありません。", { myUid: loggedInUserId, targetUid: targetUserId });
+        return; // ここで処理を中断
+    }
+    // ▲▲▲ ここまで追加 ▲▲▲
+
+    currentChatRoomId = [loggedInUserId, targetUserId].sort().join('_');
+    
+    // 生成されたチャットルームIDをコンソールで確認
+    console.log("生成されたChatRoomID:", currentChatRoomId);
+
+    document.getElementById('chat-partner-name').textContent = targetUserName;
+    showTab('chat-screen');
+    renderMessages(currentChatRoomId);
+}
 
         function renderMessages(chatRoomId) {
             const messagesContainer = document.getElementById('messages-container');
