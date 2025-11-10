@@ -102,26 +102,7 @@
         document.querySelectorAll('nav').forEach(nav => nav.innerHTML = navHTML);
         
         const avatarUrls = [
-            '/Deaikei/images/account.png', 
-            '/Deaikei/images/astronaut.png', 
-            '/Deaikei/images/bakeneko.png', 
-            '/Deaikei/images/cat.png', 
-            '/Deaikei/images/dog (1).png', 
-            '/Deaikei/images/dog.png', 
-            '/Deaikei/images/fish.png', 
-            '/Deaikei/images/kappa.png', 
-            '/Deaikei/images/man.png', 
-            '/Deaikei/images/meerkat.png', 
-            '/Deaikei/images/oni.png', 
-            '/Deaikei/images/student.png', 
-            '/Deaikei/images/tanuki.png', 
-            '/Deaikei/images/teenager (1).png', 
-            '/Deaikei/images/teenager (2).png', 
-            '/Deaikei/images/teenager.png', 
-            '/Deaikei/images/turtle.png', 
-            '/Deaikei/images/user (1).png', 
-            '/Deaikei/images/user.png', 
-            '/Deaikei/images/woman.png'
+            '/Deaikei/images/account.png', '/Deaikei/images/astronaut.png', '/Deaikei/images/bakeneko.png', '/Deaikei/images/cat.png', '/Deaikei/images/dog (1).png', '/Deaikei/images/dog.png', '/Deaikei/images/fish.png', '/Deaikei/images/kappa.png', '/Deaikei/images/man.png', '/Deaikei/images/meerkat.png', '/Deaikei/images/oni.png', '/Deaikei/images/student.png', '/Deaikei/images/tanuki.png', '/Deaikei/images/teenager (1).png', '/Deaikei/images/teenager (2).png', '/Deaikei/images/teenager.png', '/Deaikei/images/turtle.png', '/Deaikei/images/user (1).png', '/Deaikei/images/user.png', '/Deaikei/images/woman.png'
         ];
 
         function showTab(screenId) {
@@ -141,141 +122,76 @@
 
         async function handleProfileSetup() {
             const name = document.getElementById('register-name').value.trim();
-            if (!name) { 
-                alert('ニックネームは必須です。'); 
-                return; 
-            }
+            if (!name) { alert('ニックネームは必須です。'); return; }
             const selectedAvatar = document.querySelector('#avatar-selection-grid .avatar-option.selected');
             let avatarUrl = selectedAvatar ? selectedAvatar.dataset.url : '/Deaikei/images/user (1).png';
             const user = auth.currentUser;
             if (!user) return;
             const studentId = user.email.split('@')[0];
             await db.collection('users').doc(user.uid).set({
-                uid: user.uid, studentId: studentId, name: name,
-                photoURL: avatarUrl,
+                uid: user.uid, studentId: studentId, name: name, photoURL: avatarUrl,
                 faculty: document.getElementById('register-faculty').value,
                 grade: document.getElementById('register-grade').value, 
                 interests: []
             });
         }
         
-        // ★★★ 修正点1: プロフィールカードに学籍番号を表示 (変更なし、確認のみ) ★★★
         function renderCurrentCard() {
             const stack = document.getElementById('card-stack');
             const actions = document.getElementById('actions-area');
-
             if (currentUserIndex >= allUsers.length) {
                 stack.innerHTML = `<div id="no-more-cards"><h3>表示できる相手がいません。</h3><p>時間をおいて再度お試しください。</p></div>`;
                 actions.style.display = 'none';
                 return;
             }
-            
             actions.style.display = 'flex';
             const user = allUsers[currentUserIndex];
             const imageUrl = user.photoURL || '/Deaikei/images/user (1).png';
-
-            stack.innerHTML = `
-                <div class="profile-card" data-user-id="${user.uid}">
-                    <img src="${imageUrl}" class="profile-pic">
-                    <div class="profile-info">
-                        <div class="profile-header">
-                            <h3>${user.name} <small>(${user.studentId || ''})</small></h3>
-                            <button class="report-btn" onclick="reportUser('${user.uid}', '${user.name}')">•••</button>
-                        </div>
-                        <p>${user.faculty}・${user.grade}</p>
-                        <div class="profile-tags">${(user.interests || []).map(tag => `<div class="profile-tag">${tag}</div>`).join('')}</div>
-                    </div>
-                </div>`;
+            stack.innerHTML = `<div class="profile-card" data-user-id="${user.uid}"><img src="${imageUrl}" class="profile-pic"><div class="profile-info"><div class="profile-header"><h3>${user.name} <small>(${user.studentId || ''})</small></h3><button class="report-btn" onclick="reportUser('${user.uid}', '${user.name}')">•••</button></div><p>${user.faculty}・${user.grade}</p><div class="profile-tags">${(user.interests || []).map(tag => `<div class="profile-tag">${tag}</div>`).join('')}</div></div></div>`;
         }
 
-        // ★★★ 修正点2: マッチ一覧に学籍番号を表示し、チャット画面へ学籍番号を渡す ★★★
         async function renderMatches() {
             if (!loggedInUserId) return;
             const matchList = document.getElementById('match-list');
             matchList.innerHTML = "マッチング情報を読み込んでいます...";
-            
             try {
                 const myLikesSnapshot = await db.collection('likes').where('from', '==', loggedInUserId).get();
                 const likedByMe = myLikesSnapshot.docs.map(doc => doc.data().to);
-                
-                if (likedByMe.length === 0) {
-                    matchList.innerHTML = "まだマッチングした相手がいません。";
-                    return;
-                }
-
+                if (likedByMe.length === 0) { matchList.innerHTML = "まだマッチングした相手がいません。"; return; }
                 const matchedIds = [];
                 const promises = [];
-                
                 for (let i = 0; i < likedByMe.length; i += 10) {
                     const chunk = likedByMe.slice(i, i + 10);
                     const q = db.collection('likes').where('to', '==', loggedInUserId).where('from', 'in', chunk);
                     promises.push(q.get());
                 }
-
                 const snapshots = await Promise.all(promises);
                 snapshots.forEach(snapshot => { snapshot.forEach(doc => { matchedIds.push(doc.data().from); }); });
-
-                if (matchedIds.length === 0) {
-                    matchList.innerHTML = "まだマッチングした相手がいません。";
-                    return;
-                }
-
+                if (matchedIds.length === 0) { matchList.innerHTML = "まだマッチングした相手がいません。"; return; }
                 const userPromises = [];
                 for (let i = 0; i < matchedIds.length; i += 10) {
                     const chunk = matchedIds.slice(i, i + 10);
                     const q = db.collection('users').where('uid', 'in', chunk);
                     userPromises.push(q.get());
                 }
-
                 const userSnapshots = await Promise.all(userPromises);
                 matchList.innerHTML = "";
-                
                 userSnapshots.forEach(snapshot => {
                     snapshot.forEach(doc => {
                         const user = doc.data();
-                        if (!user || !user.uid || !user.name) {
-                            console.warn("必要情報が欠けているユーザーデータが見つかりました。スキップします:", user);
-                            return;
-                        }
-
+                        if (!user || !user.uid || !user.name) { console.warn("必要情報が欠けているユーザーデータが見つかりました。スキップします:", user); return; }
                         const imageUrl = user.photoURL || '/Deaikei/images/user (1).png';
-
-                        // onclickイベントに user.studentId を追加
-                        matchList.innerHTML += `
-                            <div class="match-item" onclick="openChat('${user.uid}', '${user.name}', '${imageUrl}', '${user.studentId || ''}')">
-                                <img src="${imageUrl}" class="match-avatar">
-                                <div class="match-info">
-                                    <h4>${user.name} <small>(${user.studentId || ''})</small></h4>
-                                    <p>${user.faculty}・${user.grade}</p>
-                                </div>
-                            </div>`;
+                        matchList.innerHTML += `<div class="match-item" onclick="openChat('${user.uid}', '${user.name}', '${imageUrl}', '${user.studentId || ''}')"><img src="${imageUrl}" class="match-avatar"><div class="match-info"><h4>${user.name} <small>(${user.studentId || ''})</small></h4><p>${user.faculty}・${user.grade}</p></div></div>`;
                     });
                 });
-                
-                if (matchList.innerHTML === "") {
-                    matchList.innerHTML = "表示できるマッチング相手がいません。";
-                }
-
-            } catch (error) {
-                console.error("マッチングリストの取得に失敗しました:", error);
-                matchList.innerHTML = "情報の取得に失敗しました。";
-            }
+                if (matchList.innerHTML === "") { matchList.innerHTML = "表示できるマッチング相手がいません。"; }
+            } catch (error) { console.error("マッチングリストの取得に失敗しました:", error); matchList.innerHTML = "情報の取得に失敗しました。"; }
         }
         
-        // ★★★ 修正点3: チャットヘッダーに学籍番号を表示するよう修正 ★★★
         function openChat(targetUserId, targetUserName, targetUserPhotoURL, targetUserStudentId) {
-            console.log("チャット開始試行 => 自分のUID:", loggedInUserId, "相手のUID:", targetUserId);
-            if (!loggedInUserId || !targetUserId) {
-                alert("エラー: ユーザー情報が不完全なため、チャットを開始できません。ページを再読み込みしてください。");
-                console.error("チャットを開始できません。UIDがありません。", { myUid: loggedInUserId, targetUid: targetUserId });
-                return;
-            }
+            if (!loggedInUserId || !targetUserId) { alert("エラー: ユーザー情報が不完全なため、チャットを開始できません。ページを再読み込みしてください。"); return; }
             currentChatRoomId = [loggedInUserId, targetUserId].sort().join('_');
-            console.log("生成されたChatRoomID:", currentChatRoomId);
-            
-            // ヘッダーに名前と学籍番号を設定
             document.getElementById('chat-partner-name').textContent = `${targetUserName} (${targetUserStudentId || ''})`;
-            
             showTab('chat-screen');
             renderMessages(currentChatRoomId);
         }
@@ -283,7 +199,6 @@
         function renderMessages(chatRoomId) {
             const messagesContainer = document.getElementById('messages-container');
             messagesContainer.innerHTML = '';
-
             const q = db.collection('chats').doc(chatRoomId).collection('messages').orderBy('timestamp', 'asc');
             unsubscribeChat = q.onSnapshot(snapshot => {
                 messagesContainer.innerHTML = '';
@@ -292,39 +207,55 @@
                     const bubble = document.createElement('div');
                     bubble.className = 'message-bubble';
                     bubble.textContent = msg.text;
-                    if (msg.senderId === loggedInUserId) {
-                        bubble.classList.add('sent');
-                    } else {
-                        bubble.classList.add('received');
-                    }
+                    if (msg.senderId === loggedInUserId) { bubble.classList.add('sent'); } else { bubble.classList.add('received'); }
                     messagesContainer.appendChild(bubble);
                 });
                 messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            }, error => {
-                console.error("メッセージの受信に失敗しました:", error);
-            });
+            }, error => { console.error("メッセージの受信に失敗しました:", error); });
         }
 
         async function sendMessage() {
             const input = document.getElementById('chat-input');
             const text = input.value.trim();
             if (text === '' || !currentChatRoomId || !loggedInUserId) return;
-
             try {
-                await db.collection('chats').doc(currentChatRoomId).collection('messages').add({
-                    text: text,
-                    senderId: loggedInUserId,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                });
+                await db.collection('chats').doc(currentChatRoomId).collection('messages').add({ text: text, senderId: loggedInUserId, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
                 input.value = '';
-            } catch (error) {
-                console.error("メッセージの送信に失敗しました:", error);
-                alert("メッセージの送信に失敗しました。");
-            }
+            } catch (error) { console.error("メッセージの送信に失敗しました:", error); alert("メッセージの送信に失敗しました。"); }
         }
         
         window.onload = function() { if (auth.isSignInWithEmailLink(window.location.href)) { handleEmailLinkSignIn(); } };
-        auth.onAuthStateChanged(async (user) => { if (user) { const userDoc = await db.collection('users').doc(user.uid).get(); if (userDoc.exists) { loggedInUserId = user.uid; await loadUsersForCards(); showTab('main-screen'); } else { showTab('profile-setup-screen'); } } else { loggedInUserId = null; allUsers = []; currentUserIndex = 0; showTab('login-screen'); } });
+        
+        // ★★★ この関数を修正しました ★★★
+        auth.onAuthStateChanged(async (user) => { 
+            if (user) { 
+                const userDoc = await db.collection('users').doc(user.uid).get(); 
+                if (userDoc.exists) { 
+                    // ▼▼▼ ここから修正 ▼▼▼
+                    const userData = userDoc.data();
+                    // ユーザーデータにstudentIdがなく、メールアドレス情報が取得できる場合
+                    if (!userData.studentId && user.email) {
+                        // メールアドレスからstudentIdを生成
+                        const studentId = user.email.split('@')[0];
+                        // Firestoreのユーザー情報を更新
+                        await db.collection('users').doc(user.uid).update({ studentId: studentId });
+                        console.log(`古いユーザーデータ(UID: ${user.uid})にstudentIdを補完しました。`);
+                    }
+                    // ▲▲▲ ここまで修正 ▲▲▲
+                    loggedInUserId = user.uid; 
+                    await loadUsersForCards(); 
+                    showTab('main-screen'); 
+                } else { 
+                    showTab('profile-setup-screen'); 
+                } 
+            } else { 
+                loggedInUserId = null; 
+                allUsers = []; 
+                currentUserIndex = 0; 
+                showTab('login-screen'); 
+            } 
+        });
+
         async function handleEmailLinkSignIn() { let email = window.localStorage.getItem('emailForSignIn'); if (!email) { email = window.prompt('認証を完了するため、メールアドレスを再度入力してください。'); } try { await auth.signInWithEmailLink(email, window.location.href); window.localStorage.removeItem('emailForSignIn'); } catch (error) { alert('ログインに失敗しました: ' + error.message); showTab('login-screen'); } }
         function sendSignInLink() { const email = document.getElementById('email-input').value.replace(/\s/g, ''); if (!email.endsWith('@s.akashi.ac.jp')) { alert('登録できるのは "@s.akashi.ac.jp" のメールアドレスのみです。'); return; } const actionCodeSettings = { url: window.location.href, handleCodeInApp: true }; auth.sendSignInLinkToEmail(email, actionCodeSettings).then(() => { window.localStorage.setItem('emailForSignIn', email); alert(`認証用のリンクを ${email} に送信しました。メールを確認してください。`); }).catch(error => alert('メールの送信に失敗しました: ' + error.message)); }
         function handleLogout() { const msg = "一度ログアウトすると、セキュリティ上の理由により、同じメールアドレスで次にログインできるまで時間がかかる場合があります。\n本当によろしいですか？"; if (confirm(msg)) auth.signOut(); }
@@ -340,9 +271,7 @@
                 allUsers = usersSnapshot.docs.map(doc => doc.data()).filter(user => user.uid !== loggedInUserId && !swipedUserIds.includes(user.uid));
                 currentUserIndex = 0;
                 renderCurrentCard();
-            } catch (error) {
-                console.error("ユーザーの読み込みに失敗しました:", error);
-            }
+            } catch (error) { console.error("ユーザーの読み込みに失敗しました:", error); }
         }
         
         function handleNope() {
@@ -353,25 +282,16 @@
         
         async function handleLikeClick() {
             if (currentUserIndex >= allUsers.length || !loggedInUserId) return;
-            
             const targetUser = allUsers[currentUserIndex];
-            if (!targetUser || !targetUser.uid) {
-                console.error("ターゲットユーザーのUIDが不正です:", targetUser);
-                return;
-            }
-
+            if (!targetUser || !targetUser.uid) { console.error("ターゲットユーザーのUIDが不正です:", targetUser); return; }
             try {
                 await db.collection('likes').add({ from: loggedInUserId, to: targetUser.uid });
                 const query = db.collection('likes').where('from', '==', targetUser.uid).where('to', '==', loggedInUserId);
                 const result = await query.get();
-                if (!result.empty) {
-                    alert(`🎉 ${targetUser.name}さんとマッチングしました！`);
-                }
+                if (!result.empty) { alert(`🎉 ${targetUser.name}さんとマッチングしました！`); }
                 currentUserIndex++;
                 renderCurrentCard();
-            } catch (error) {
-                console.error("Like処理でエラーが発生しました:", error);
-            }
+            } catch (error) { console.error("Like処理でエラーが発生しました:", error); }
         }
 
         async function reportUser(userId, userName) {
