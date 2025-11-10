@@ -133,18 +133,17 @@
             });
         }
         
-        // ★★★★★ 修正箇所 ★★★★★
         function renderCurrentCard() {
             const stack = document.getElementById('card-stack');
             const actions = document.getElementById('actions-area');
 
             if (currentUserIndex >= allUsers.length) {
                 stack.innerHTML = `<div id="no-more-cards"><h3>表示できる相手がいません。</h3><p>時間をおいて再度お試しください。</p></div>`;
-                actions.style.display = 'none'; // アクションボタンを非表示
+                actions.style.display = 'none';
                 return;
             }
             
-            actions.style.display = 'flex'; // アクションボタンを表示
+            actions.style.display = 'flex';
             const user = allUsers[currentUserIndex];
             stack.innerHTML = `
                 <div class="profile-card" data-user-id="${user.uid}">
@@ -160,12 +159,14 @@
                 </div>`;
         }
 
+        // ★★★★★ この関数を修正しました ★★★★★
         async function renderMatches() {
             if (!loggedInUserId) return;
             const matchList = document.getElementById('match-list');
             matchList.innerHTML = "マッチング情報を読み込んでいます...";
             
             try {
+                // 1. 自分がLikeした相手の全リストを取得
                 const myLikesSnapshot = await db.collection('likes').where('from', '==', loggedInUserId).get();
                 const likedByMe = myLikesSnapshot.docs.map(doc => doc.data().to);
                 
@@ -174,27 +175,65 @@
                     return;
                 }
 
-                const theyLikeMeSnapshot = await db.collection('likes').where('to', '==', loggedInUserId).where('from', 'in', likedByMe).get();
-                const matchedIds = theyLikeMeSnapshot.docs.map(doc => doc.data().from);
+                // 2. likedByMeを10件ずつのチャンクに分割して、相手からのLikeを並行して検索
+                const matchedIds = [];
+                const promises = [];
+                
+                for (let i = 0; i < likedByMe.length; i += 10) {
+                    const chunk = likedByMe.slice(i, i + 10); // 10件ずつ切り出す
+                    const q = db.collection('likes')
+                        .where('to', '==', loggedInUserId)
+                        .where('from', 'in', chunk); // 10件以下の配列で検索
+                    promises.push(q.get());
+                }
+
+                // すべての検索を並行して実行し、結果を待つ
+                const snapshots = await Promise.all(promises);
+
+                // すべての結果からマッチしたIDを収集する
+                snapshots.forEach(snapshot => {
+                    snapshot.forEach(doc => {
+                        matchedIds.push(doc.data().from);
+                    });
+                });
 
                 if (matchedIds.length === 0) {
                     matchList.innerHTML = "まだマッチングした相手がいません。";
                     return;
                 }
 
-                const usersSnapshot = await db.collection('users').where('uid', 'in', matchedIds).get();
+                // 3. マッチしたユーザーのプロフィール情報を取得して表示 (ここでもin句の上限を考慮)
+                const finalUsersHtml = [];
+                const userPromises = [];
+
+                for (let i = 0; i < matchedIds.length; i += 10) {
+                    const chunk = matchedIds.slice(i, i + 10);
+                    const q = db.collection('users').where('uid', 'in', chunk);
+                    userPromises.push(q.get());
+                }
+
+                const userSnapshots = await Promise.all(userPromises);
+                
                 matchList.innerHTML = ""; // 一旦クリア
-                usersSnapshot.forEach(doc => {
-                    const user = doc.data();
-                    matchList.innerHTML += `
-                        <div class="match-item" onclick="openChat('${user.uid}', '${user.name}', '${user.photoURL}')">
-                            <img src="${user.photoURL}" class="match-avatar">
-                            <div class="match-info">
-                                <h4>${user.name} <small>(${user.studentId || ''})</small></h4>
-                                <p>${user.faculty}・${user.grade}</p>
-                            </div>
-                        </div>`;
+                
+                userSnapshots.forEach(snapshot => {
+                    snapshot.forEach(doc => {
+                        const user = doc.data();
+                        matchList.innerHTML += `
+                            <div class="match-item" onclick="openChat('${user.uid}', '${user.name}', '${user.photoURL}')">
+                                <img src="${user.photoURL}" class="match-avatar">
+                                <div class="match-info">
+                                    <h4>${user.name} <small>(${user.studentId || ''})</small></h4>
+                                    <p>${user.faculty}・${user.grade}</p>
+                                </div>
+                            </div>`;
+                    });
                 });
+                
+                if (matchList.innerHTML === "") {
+                    matchList.innerHTML = "マッチング相手の情報を取得できませんでした。";
+                }
+
             } catch (error) {
                 console.error("マッチングリストの取得に失敗しました:", error);
                 matchList.innerHTML = "情報の取得に失敗しました。";
@@ -273,16 +312,14 @@
             }
         }
         
-        // ★★★★★ 修正箇所 ★★★★★
         function handleNope() {
-            if (currentUserIndex >= allUsers.length) return; // 対象がいない場合は何もしない
+            if (currentUserIndex >= allUsers.length) return;
             currentUserIndex++;
             renderCurrentCard();
         }
         
-        // ★★★★★ 修正箇所 ★★★★★
         async function handleLikeClick() {
-            if (currentUserIndex >= allUsers.length || !loggedInUserId) return; // 対象がいない、または未ログインの場合は何もしない
+            if (currentUserIndex >= allUsers.length || !loggedInUserId) return;
             
             const targetUser = allUsers[currentUserIndex];
             if (!targetUser || !targetUser.uid) {
