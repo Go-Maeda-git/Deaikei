@@ -40,7 +40,7 @@
         .login-container button { width: 100%; max-width: 300px; border-radius: 25px; background: linear-gradient(90deg, #FD297B, #FF655B); border: none; padding: 12px; color: white; font-weight: bold; }
         .list-container { flex-grow: 1; overflow-y: auto; padding: 20px 20px 80px; }
         .list-container h2 { color: var(--theme-pink); }
-        .match-item { display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #333; cursor: pointer; }
+        .match-item { display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #333; cursor: pointer; position: relative; } /* ★★★ 修正点: position: relativeを追加 ★★★ */
         .match-avatar { width: 60px; height: 60px; border-radius: 50%; background-color: #333; margin-right: 15px; object-fit: cover; }
         .profile-edit-section { margin-bottom: 2em; }
         .profile-edit-section button { background: var(--theme-pink); border: none; padding: 12px; font-weight: bold; border-radius: 25px; }
@@ -59,6 +59,8 @@
         .chat-input-area { display: flex; padding: 10px; background-color: var(--card-dark); border-top: 1px solid #333; }
         #chat-input { flex-grow: 1; background-color: #3e3e3e; border: none; color: var(--text-light); border-radius: 20px; padding: 10px 15px; }
         #chat-send-btn { background: none; border: none; color: var(--theme-pink); padding: 10px; cursor: pointer; }
+        /* ★★★ 修正点: マッチング一覧の通報ボタン用スタイルを追加 ★★★ */
+        .match-report-btn { position: absolute; top: 50%; right: 10px; transform: translateY(-50%); background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 10px; font-size: 20px; line-height: 1; }
     </style>
 </head>
 <body>
@@ -101,9 +103,7 @@
         const navHTML = `<button onclick="showTab('main-screen')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12.75 2.25A2.25 2.25 0 0010.5 4.5v15a2.25 2.25 0 002.25 2.25h.518a.75.75 0 00.74-1.023l-.26-1.037a1.5 1.5 0 011.025-1.742 1.5 1.5 0 011.742 1.025l.26 1.037a.75.75 0 00.74 1.023h.518a2.25 2.25 0 002.25-2.25v-15a2.25 2.25 0 00-2.25-2.25H12.75zM12 4.5h6.75v15H12V4.5zM3.75 6A2.25 2.25 0 001.5 8.25v9A2.25 2.25 0 003.75 19.5h.518a.75.75 0 00.74-1.023l-.26-1.037a1.5 1.5 0 011.025-1.742 1.5 1.5 0 011.742 1.025l.26 1.037A.75.75 0 008.482 19.5h.518A2.25 2.25 0 0011.25 17.25v-9A2.25 2.25 0 009 6H3.75zM3 8.25h6.75v9H3v-9z" /></svg></button><button onclick="showTab('matches-screen')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M4.848 2.771A49.144 49.144 0 0112 2.25c2.43 0 4.817.178 7.152.52 1.978.292 3.348 2.024 3.348 3.97v6.02c0 1.946-1.37 3.678-3.348 3.97a48.901 48.901 0 01-3.476.383.39.39 0 00-.297.17l-2.755 4.133a.75.75 0 01-1.248 0l-2.755-4.133a.39.39 0 00-.297-.17 48.9 48.9 0 01-3.476-.384c-1.978-.29-3.348-2.024-3.348-3.97V6.741c0-1.946 1.37-3.68 3.348-3.97zM6.75 8.25a.75.75 0 01.75-.75h9a.75.75 0 010 1.5h-9a.75.75 0 01-.75-.75zm.75 2.25a.75.75 0 000 1.5H12a.75.75 0 000-1.5H7.5z" clip-rule="evenodd" /></svg></button><button onclick="showTab('profile-screen')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z" clip-rule="evenodd" /></svg></button>`;
         document.querySelectorAll('nav').forEach(nav => nav.innerHTML = navHTML);
         
-        const avatarUrls = [
-            '/Deaikei/images/account.png', '/Deaikei/images/astronaut.png', '/Deaikei/images/bakeneko.png', '/Deaikei/images/cat.png', '/Deaikei/images/dog (1).png', '/Deaikei/images/dog.png', '/Deaikei/images/fish.png', '/Deaikei/images/kappa.png', '/Deaikei/images/man.png', '/Deaikei/images/meerkat.png', '/Deaikei/images/oni.png', '/Deaikei/images/student.png', '/Deaikei/images/tanuki.png', '/Deaikei/images/teenager (1).png', '/Deaikei/images/teenager (2).png', '/Deaikei/images/teenager.png', '/Deaikei/images/turtle.png', '/Deaikei/images/user (1).png', '/Deaikei/images/user.png', '/Deaikei/images/woman.png'
-        ];
+        const avatarUrls = [ '/Deaikei/images/account.png', '/Deaikei/images/astronaut.png', '/Deaikei/images/bakeneko.png', '/Deaikei/images/cat.png', '/Deaikei/images/dog (1).png', '/Deaikei/images/dog.png', '/Deaikei/images/fish.png', '/Deaikei/images/kappa.png', '/Deaikei/images/man.png', '/Deaikei/images/meerkat.png', '/Deaikei/images/oni.png', '/Deaikei/images/student.png', '/Deaikei/images/tanuki.png', '/Deaikei/images/teenager (1).png', '/Deaikei/images/teenager (2).png', '/Deaikei/images/teenager.png', '/Deaikei/images/turtle.png', '/Deaikei/images/user (1).png', '/Deaikei/images/user.png', '/Deaikei/images/woman.png' ];
 
         function showTab(screenId) {
             if (unsubscribeChat) { unsubscribeChat(); unsubscribeChat = null; }
@@ -128,12 +128,7 @@
             const user = auth.currentUser;
             if (!user) return;
             const studentId = user.email.split('@')[0];
-            await db.collection('users').doc(user.uid).set({
-                uid: user.uid, studentId: studentId, name: name, photoURL: avatarUrl,
-                faculty: document.getElementById('register-faculty').value,
-                grade: document.getElementById('register-grade').value, 
-                interests: []
-            });
+            await db.collection('users').doc(user.uid).set({ uid: user.uid, studentId: studentId, name: name, photoURL: avatarUrl, faculty: document.getElementById('register-faculty').value, grade: document.getElementById('register-grade').value, interests: [] });
         }
         
         function renderCurrentCard() {
@@ -150,6 +145,7 @@
             stack.innerHTML = `<div class="profile-card" data-user-id="${user.uid}"><img src="${imageUrl}" class="profile-pic"><div class="profile-info"><div class="profile-header"><h3>${user.name} <small>(${user.studentId || ''})</small></h3><button class="report-btn" onclick="reportUser('${user.uid}', '${user.name}')">•••</button></div><p>${user.faculty}・${user.grade}</p><div class="profile-tags">${(user.interests || []).map(tag => `<div class="profile-tag">${tag}</div>`).join('')}</div></div></div>`;
         }
 
+        // ★★★ 修正点: マッチング一覧のHTMLに通報ボタンを追加 ★★★
         async function renderMatches() {
             if (!loggedInUserId) return;
             const matchList = document.getElementById('match-list');
@@ -181,7 +177,16 @@
                         const user = doc.data();
                         if (!user || !user.uid || !user.name) { console.warn("必要情報が欠けているユーザーデータが見つかりました。スキップします:", user); return; }
                         const imageUrl = user.photoURL || '/Deaikei/images/user (1).png';
-                        matchList.innerHTML += `<div class="match-item" onclick="openChat('${user.uid}', '${user.name}', '${imageUrl}', '${user.studentId || ''}')"><img src="${imageUrl}" class="match-avatar"><div class="match-info"><h4>${user.name} <small>(${user.studentId || ''})</small></h4><p>${user.faculty}・${user.grade}</p></div></div>`;
+                        // onclickイベントに reportUserFromMatchList を追加
+                        matchList.innerHTML += `
+                            <div class="match-item" onclick="openChat('${user.uid}', '${user.name}', '${imageUrl}', '${user.studentId || ''}')">
+                                <img src="${imageUrl}" class="match-avatar">
+                                <div class="match-info">
+                                    <h4>${user.name} <small>(${user.studentId || ''})</small></h4>
+                                    <p>${user.faculty}・${user.grade}</p>
+                                </div>
+                                <button class="match-report-btn" onclick="reportUserFromMatchList(event, '${user.uid}', '${user.name}')">•••</button>
+                            </div>`;
                     });
                 });
                 if (matchList.innerHTML === "") { matchList.innerHTML = "表示できるマッチング相手がいません。"; }
@@ -226,22 +231,16 @@
         
         window.onload = function() { if (auth.isSignInWithEmailLink(window.location.href)) { handleEmailLinkSignIn(); } };
         
-        // ★★★ この関数を修正しました ★★★
         auth.onAuthStateChanged(async (user) => { 
             if (user) { 
                 const userDoc = await db.collection('users').doc(user.uid).get(); 
                 if (userDoc.exists) { 
-                    // ▼▼▼ ここから修正 ▼▼▼
                     const userData = userDoc.data();
-                    // ユーザーデータにstudentIdがなく、メールアドレス情報が取得できる場合
                     if (!userData.studentId && user.email) {
-                        // メールアドレスからstudentIdを生成
                         const studentId = user.email.split('@')[0];
-                        // Firestoreのユーザー情報を更新
                         await db.collection('users').doc(user.uid).update({ studentId: studentId });
                         console.log(`古いユーザーデータ(UID: ${user.uid})にstudentIdを補完しました。`);
                     }
-                    // ▲▲▲ ここまで修正 ▲▲▲
                     loggedInUserId = user.uid; 
                     await loadUsersForCards(); 
                     showTab('main-screen'); 
@@ -249,10 +248,7 @@
                     showTab('profile-setup-screen'); 
                 } 
             } else { 
-                loggedInUserId = null; 
-                allUsers = []; 
-                currentUserIndex = 0; 
-                showTab('login-screen'); 
+                loggedInUserId = null; allUsers = []; currentUserIndex = 0; showTab('login-screen'); 
             } 
         });
 
@@ -303,6 +299,16 @@
             } 
         }
         
+        // ★★★ 修正点: マッチング一覧用の通報機能を追加 ★★★
+        async function reportUserFromMatchList(event, userId, userName) {
+            event.stopPropagation(); // behind match-item's onclick event to fire
+            const reason = prompt(`"${userName}"さんを通報します。理由を入力してください。(例: 不適切なプロフィール画像)`); 
+            if (reason && reason.trim() !== '' && loggedInUserId) { 
+                await db.collection('reports').add({ reportedUserId: userId, reporterId: loggedInUserId, reason: reason, timestamp: firebase.firestore.FieldValue.serverTimestamp() }); 
+                alert('通報が送信されました。ご協力ありがとうございます。');
+            }
+        }
+
         function renderProfileEditor() {
             if (!loggedInUserId) return;
             const interestsEditor = document.getElementById('profile-interests-editor'); 
