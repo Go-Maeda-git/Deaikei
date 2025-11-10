@@ -100,7 +100,30 @@
         const allInterests = ["プログラミング", "機械学習", "電子工作", "設計", "実験", "ロボコン", "Python", "Java", "C++", "JavaScript", "CAD", "3Dプリンタ", "VR/AR", "ドローン", "Web制作", "アプリ開発", "デザイン", "映像制作", "DTM", "ゲーム制作", "eスポーツ", "バスケ", "サッカー", "テニス", "バドミントン", "野球", "陸上", "音楽", "軽音", "吹奏楽", "バンド", "ギター", "ピアノ", "写真", "筋トレ", "料理", "お菓子作り", "アニメ", "漫画", "ゲーム", "イラスト", "映画鑑賞", "読書", "旅行", "ツーリング", "資格勉強", "TOIC", "インターン", "起業したい", "ボランティア", "バイク"];
         const navHTML = `<button onclick="showTab('main-screen')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12.75 2.25A2.25 2.25 0 0010.5 4.5v15a2.25 2.25 0 002.25 2.25h.518a.75.75 0 00.74-1.023l-.26-1.037a1.5 1.5 0 011.025-1.742 1.5 1.5 0 011.742 1.025l.26 1.037a.75.75 0 00.74 1.023h.518a2.25 2.25 0 002.25-2.25v-15a2.25 2.25 0 00-2.25-2.25H12.75zM12 4.5h6.75v15H12V4.5zM3.75 6A2.25 2.25 0 001.5 8.25v9A2.25 2.25 0 003.75 19.5h.518a.75.75 0 00.74-1.023l-.26-1.037a1.5 1.5 0 011.025-1.742 1.5 1.5 0 011.742 1.025l.26 1.037A.75.75 0 008.482 19.5h.518A2.25 2.25 0 0011.25 17.25v-9A2.25 2.25 0 009 6H3.75zM3 8.25h6.75v9H3v-9z" /></svg></button><button onclick="showTab('matches-screen')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M4.848 2.771A49.144 49.144 0 0112 2.25c2.43 0 4.817.178 7.152.52 1.978.292 3.348 2.024 3.348 3.97v6.02c0 1.946-1.37 3.678-3.348 3.97a48.901 48.901 0 01-3.476.383.39.39 0 00-.297.17l-2.755 4.133a.75.75 0 01-1.248 0l-2.755-4.133a.39.39 0 00-.297-.17 48.9 48.9 0 01-3.476-.384c-1.978-.29-3.348-2.024-3.348-3.97V6.741c0-1.946 1.37-3.68 3.348-3.97zM6.75 8.25a.75.75 0 01.75-.75h9a.75.75 0 010 1.5h-9a.75.75 0 01-.75-.75zm.75 2.25a.75.75 0 000 1.5H12a.75.75 0 000-1.5H7.5z" clip-rule="evenodd" /></svg></button><button onclick="showTab('profile-screen')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z" clip-rule="evenodd" /></svg></button>`;
         document.querySelectorAll('nav').forEach(nav => nav.innerHTML = navHTML);
-        const avatarUrls = ['/Deaikei/images/astronaut.png', '/Deaikei/images/cat.png', '/Deaikei/images/dog (1).png', '/Deaikei/images/dog.png', '/Deaikei/images/man.png', '/Deaikei/images/meerkat.png', '/Deaikei/images/woman.png'];
+        
+        // ★★★ 変更点1: アバターのリストを更新 ★★★
+        const avatarUrls = [
+            '/Deaikei/images/account.png', 
+            '/Deaikei/images/astronaut.png', 
+            '/Deaikei/images/bakeneko.png', 
+            '/Deaikei/images/cat.png', 
+            '/Deaikei/images/dog (1).png', 
+            '/Deaikei/images/dog.png', 
+            '/Deaikei/images/fish.png', 
+            '/Deaikei/images/kappa.png', 
+            '/Deaikei/images/man.png', 
+            '/Deaikei/images/meerkat.png', 
+            '/Deaikei/images/oni.png', 
+            '/Deaikei/images/student.png', 
+            '/Deaikei/images/tanuki.png', 
+            '/Deaikei/images/teenager (1).png', 
+            '/Deaikei/images/teenager (2).png', 
+            '/Deaikei/images/teenager.png', 
+            '/Deaikei/images/turtle.png', 
+            '/Deaikei/images/user (1).png', 
+            '/Deaikei/images/user.png', 
+            '/Deaikei/images/woman.png'
+        ];
 
         function showTab(screenId) {
             if (unsubscribeChat) { unsubscribeChat(); unsubscribeChat = null; }
@@ -117,16 +140,36 @@
             if (screenId === 'profile-screen') renderProfileEditor();
         }
 
+        // ★★★ 変更点2: プロフィール設定処理を修正 ★★★
         async function handleProfileSetup() {
             const name = document.getElementById('register-name').value.trim();
+            // ニックネームは必須
+            if (!name) { 
+                alert('ニックネームは必須です。'); 
+                return; 
+            }
+
             const selectedAvatar = document.querySelector('#avatar-selection-grid .avatar-option.selected');
-            if (!name || !selectedAvatar) { alert('アバターとニックネームは必須です。'); return; }
+            let avatarUrl;
+
+            if (selectedAvatar) {
+                // アバターが選択されている場合は、そのURLを使用
+                avatarUrl = selectedAvatar.dataset.url;
+            } else {
+                // アバターが選択されていない場合は、デフォルトのURLを設定
+                avatarUrl = '/Deaikei/images/user (1).png';
+            }
+
             const user = auth.currentUser;
             if (!user) return;
+
             const studentId = user.email.split('@')[0];
+            
             await db.collection('users').doc(user.uid).set({
-                uid: user.uid, studentId: studentId, name: name,
-                photoURL: selectedAvatar.dataset.url,
+                uid: user.uid, 
+                studentId: studentId, 
+                name: name,
+                photoURL: avatarUrl, // 決定したアバターURLを使用
                 faculty: document.getElementById('register-faculty').value,
                 grade: document.getElementById('register-grade').value, 
                 interests: []
@@ -159,7 +202,6 @@
                 </div>`;
         }
 
-        // ★★★★★ この関数を修正しました ★★★★★
         async function renderMatches() {
             if (!loggedInUserId) return;
             const matchList = document.getElementById('match-list');
@@ -208,14 +250,10 @@
                 userSnapshots.forEach(snapshot => {
                     snapshot.forEach(doc => {
                         const user = doc.data();
-
-                        // ▼▼▼ ここに安全確認コードを追加しました ▼▼▼
-                        // ユーザー情報が不完全な場合は、このユーザーをリストに表示しない
                         if (!user || !user.uid || !user.name || !user.photoURL) {
                             console.warn("不完全なユーザーデータが見つかりました。スキップします:", user);
-                            return; // forEachの現在のループを抜ける
+                            return;
                         }
-                        // ▲▲▲ 安全確認ここまで ▲▲▲
 
                         matchList.innerHTML += `
                             <div class="match-item" onclick="openChat('${user.uid}', '${user.name}', '${user.photoURL}')">
