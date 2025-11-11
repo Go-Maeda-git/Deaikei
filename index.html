@@ -99,12 +99,11 @@
         <div id="profile-screen" class="screen"><div class="list-container"><div class="profile-edit-section"><h2>アバターの変更</h2><div id="avatar-edit-grid"></div><button onclick="updateAvatar()">アバターを更新</button></div><div class="profile-edit-section"><h2>興味・関心タグ</h2><div id="profile-interests-editor" class="tag-container"></div><div id="custom-interest-adder"><input type="text" id="custom-interest-input" placeholder="タグを自由に追加"><button id="add-interest-btn" onclick="addCustomInterest()">追加</button></div><button onclick="updateInterests()" style="margin-top: 1em;">興味タグを更新</button></div><div class="profile-edit-section"><h2>今日のひとこと</h2><p id="daily-topic-question-editor" style="color: var(--text-muted);"></p><textarea id="daily-topic-answer-input" placeholder="回答を入力..."></textarea><button onclick="updateDailyAnswer()">ひとことを更新</button></div><div class="profile-edit-section"><h2>アカウント設定</h2><button class="logout-button" onclick="handleLogout()">ログアウト</button><button class="delete-button" onclick="handleDeleteAccount()">アカウントを完全に削除する</button></div></div><nav id="profile-nav"></nav></div>
         <div id="chat-screen" class="screen"><div class="chat-header"><button class="chat-back-btn" onclick="showTab('matches-screen')"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="24" height="24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg></button><h2 id="chat-partner-name">相手の名前</h2></div><div class="messages-container" id="messages-container"></div><div class="chat-input-area"><input type="text" id="chat-input" placeholder="メッセージを入力..."><button id="chat-send-btn" onclick="sendMessage()"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" /></svg></button></div></div>
 
-        <!-- ▼▼▼ ゲームセクションの変更 ▼▼▼ -->
         <div id="snake-game-screen" class="screen">
             <div class="app-container game-container">
                 <h2>蛇ゲーム</h2>
                 <div id="game-score">Score: 0</div>
-                <canvas id="snake-canvas"></canvas> <!-- ID変更 -->
+                <canvas id="snake-canvas"></canvas>
                 <div class="game-ui">
                     <button id="start-game-btn" onclick="startSnakeGame()">ゲーム開始</button>
                 </div>
@@ -112,14 +111,11 @@
             </div>
             <nav id="game-nav"></nav>
         </div>
-        <!-- ▲▲▲ ゲームセクションの変更 ▲▲▲ -->
-
+        
         <div id="ranking-screen" class="screen">
             <div class="list-container">
                 <h2>ハイスコアランキング</h2>
-                <!-- ▼▼▼ ゲーム画面への遷移先を変更 ▼▼▼ -->
                 <button class="play-game-button" onclick="showTab('snake-game-screen')" style="width: 100%; margin-bottom: 20px;">ゲームをプレイする</button>
-                <!-- ▲▲▲ ゲーム画面への遷移先を変更 ▲▲▲ -->
                 <div id="ranking-list"></div>
             </div>
             <nav id="ranking-nav"></nav>
@@ -153,13 +149,12 @@
         const allInterests = ["プログラミング", "機械学習", "電子工作", "設計", "実験", "ロボコン", "Python", "Java", "C++", "JavaScript", "CAD", "3Dプリンタ", "VR/AR", "ドローン", "Web制作", "アプリ開発", "デザイン", "映像制作", "DTM", "ゲーム制作", "eスポーツ", "バスケ", "サッカー", "テニス", "バドミントン", "野球", "陸上", "音楽", "軽音", "吹奏楽", "バンド", "ギター", "ピアノ", "写真", "筋トレ", "料理", "お菓子作り", "アニメ", "漫画", "ゲーム", "イラスト", "映画鑑賞", "読書", "旅行", "ツーリング", "資格勉強", "TOEIC", "インターン", "起業したい", "ボランティア", "バイク"];
         const sanitizeHTML = (str) => { const temp = document.createElement('div'); temp.textContent = str; return temp.innerHTML; };
 
-        // 認証フロー
         (function() { if (auth.isSignInWithEmailLink(window.location.href)) handleEmailLinkSignIn(); })();
         auth.onAuthStateChanged(async (user) => { if (user) { const userDoc = await db.collection('users').doc(user.uid).get(); if (userDoc.exists) { const userData = userDoc.data(); if (!userData.studentId && user.email) { await db.collection('users').doc(user.uid).update({ studentId: user.email.split('@')[0] }); } loggedInUserId = user.uid; await loadUsersForCards(); showTab('main-screen'); } else { showTab('profile-setup-screen'); } } else { loggedInUserId = null; allUsers = []; currentUserIndex = 0; showTab('login-screen'); } });
         
         function showTab(screenId) {
             if (unsubscribeChat) { unsubscribeChat(); unsubscribeChat = null; }
-            stopSnakeGame(); // ゲーム停止関数を呼ぶ
+            stopSnakeGame();
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             const screen = document.getElementById(screenId);
             if (screen) screen.classList.add('active');
@@ -175,7 +170,7 @@
             if (screenId === 'matches-screen') renderMatches();
             if (screenId === 'profile-screen') renderProfileEditor();
             if (screenId === 'ranking-screen') renderRanking();
-            if (screenId === 'snake-game-screen') initSnakeGame(); // ゲーム初期化関数を呼ぶ
+            if (screenId === 'snake-game-screen') initSnakeGame();
         }
 
         async function handleProfileSetup() { const name = document.getElementById('register-name').value.trim(); if (!name) { alert('ニックネームは必須です。'); return; } const selectedAvatar = document.querySelector('#avatar-selection-grid .avatar-option.selected'); let avatarUrl = selectedAvatar ? selectedAvatar.dataset.url : '/Deaikei/images/user (1).png'; const user = auth.currentUser; if (!user) return; const studentId = user.email.split('@')[0]; const profileData = { uid: user.uid, studentId: studentId, name: name, photoURL: avatarUrl, faculty: document.getElementById('register-faculty').value, grade: document.getElementById('register-grade').value, interests: [], isBanned: false, blockedUsers: [], pongHighScore: 0 }; await db.collection('users').doc(user.uid).set(profileData); await loadUsersForCards(); showTab('main-screen'); }
@@ -185,18 +180,23 @@
         async function handleLikeClick() { if (currentUserIndex >= allUsers.length || !loggedInUserId) return; const targetUser = allUsers[currentUserIndex]; if (!targetUser || !targetUser.uid) { console.error("Invalid target user data. Skipping."); currentUserIndex++; renderCurrentCard(); return; } const card = document.querySelector('.profile-card'); if (card) { card.classList.add('exit-like'); try { await db.collection('likes').add({ from: loggedInUserId, to: targetUser.uid }); const result = await db.collection('likes').where('from', '==', targetUser.uid).where('to', '==', loggedInUserId).get(); if (!result.empty) { alert(`🎉 ${targetUser.name}さんとマッチングしました！`); } setTimeout(() => { currentUserIndex++; renderCurrentCard(); }, 400); } catch (error) { console.error("Like処理エラー:", error); setTimeout(() => { currentUserIndex++; renderCurrentCard(); }, 400); } } }
         
         // =======================================================
-        // ▼▼▼ Snake Game Logic (ここから変更) ▼▼▼
+        // ▼▼▼ Snake Game Logic (ここから差し替え) ▼▼▼
         // =======================================================
         const snakeCanvas = document.getElementById('snake-canvas');
         const snakeCtx = snakeCanvas.getContext('2d');
-        let gameLoopId;
+        
+        // --- ゲームループと状態管理の変数を変更 ---
+        let animationFrameId;
+        let lastLogicUpdateTime = 0;
+        let gameSpeed = 150; // 蛇が1マス進む時間 (ms)
 
-        // ゲーム設定
+        // --- ゲーム設定 ---
         let gridSize = 20;
         let tileCount;
 
-        // ゲーム状態
+        // --- ゲーム状態 ---
         let snake;
+        let previousSnake; // 補間描画のために前のフレームの蛇の状態を保存
         let food;
         let score;
         let dx, dy; // 進行方向
@@ -206,7 +206,6 @@
         function resizeSnakeCanvas() {
             const container = snakeCanvas.parentElement;
             const size = Math.min(container.clientWidth * 0.95, 400);
-            // グリッドに合うようにキャンバスサイズを調整
             tileCount = Math.floor(size / gridSize);
             snakeCanvas.width = tileCount * gridSize;
             snakeCanvas.height = tileCount * gridSize;
@@ -220,84 +219,117 @@
             document.getElementById('start-game-btn').style.display = 'block';
             document.getElementById('game-score').textContent = "Score: 0";
             
-            // 蛇の初期位置（中央）
             snake = [
                 {x: Math.floor(tileCount / 2), y: Math.floor(tileCount / 2)},
                 {x: Math.floor(tileCount / 2) - 1, y: Math.floor(tileCount / 2)},
                 {x: Math.floor(tileCount / 2) - 2, y: Math.floor(tileCount / 2)}
             ];
+            // 補間用に初期状態をコピー
+            previousSnake = JSON.parse(JSON.stringify(snake));
+            
             score = 0;
+            gameSpeed = 150; // 速度をリセット
             dx = 1; // 最初は右に移動
             dy = 0;
             createFood();
-            drawSnakeGame();
+            drawInitialState(); // 初期状態を描画
         }
 
         // 開始前の描画用
-        function drawSnakeGame() {
+        function drawInitialState() {
             clearCanvas();
             drawFood();
-            drawSnake();
+            drawSnake(0); // 進捗0で描画
         }
         
-        // ゲーム開始
+        // --- ゲームループを requestAnimationFrame ベースに変更 ---
         function startSnakeGame() {
-            if (gameLoopId) clearTimeout(gameLoopId);
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            
             if (isGameOver) {
-                 initSnakeGame(); // ゲームオーバーならリセットしてから開始
+                 initSnakeGame();
             }
             isGameOver = false;
             document.getElementById('start-game-btn').style.display = 'none';
-            mainLoop();
+
+            lastLogicUpdateTime = performance.now();
+            animationFrameId = requestAnimationFrame(gameLoop);
         }
 
-        // ゲーム停止
         function stopSnakeGame() {
-            if (gameLoopId) {
-                clearTimeout(gameLoopId);
-                gameLoopId = null;
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
             }
         }
 
-        // メインループ
-        function mainLoop() {
+        // 新しいゲームループ
+        function gameLoop(currentTime) {
+            animationFrameId = requestAnimationFrame(gameLoop);
+
             if (isGameOver) {
                 gameOver();
                 return;
             }
-            changingDirection = false;
-            gameLoopId = setTimeout(function onTick() {
-                clearCanvas();
-                drawFood();
-                moveSnake();
-                drawSnake();
-                mainLoop();
-            }, 150 - (score * 2)); // スコアが上がるほど速くなる（上限あり）
+
+            // ロジックの更新
+            const timeSinceLastUpdate = currentTime - lastLogicUpdateTime;
+            if (timeSinceLastUpdate > gameSpeed) {
+                // 遅延が蓄積しないように、更新タイミングを調整
+                lastLogicUpdateTime = currentTime - (timeSinceLastUpdate % gameSpeed);
+                
+                changingDirection = false;
+                moveSnake(); // ゲーム状態を更新
+            }
+
+            // 毎フレーム描画処理
+            // 次のロジック更新までの進捗率（0.0〜1.0）を計算
+            const progress = Math.min((currentTime - lastLogicUpdateTime) / gameSpeed, 1);
+            
+            clearCanvas();
+            drawFood();
+            drawSnake(progress); // 補間しながら描画
         }
 
-        // キャンバスをクリア
         function clearCanvas() {
             snakeCtx.fillStyle = '#121212';
             snakeCtx.fillRect(0, 0, snakeCanvas.width, snakeCanvas.height);
         }
 
-        // 蛇と餌の描画
-        function drawSnakePart(snakePart) {
-            snakeCtx.fillStyle = '#2DB97B'; // likeボタンの色
+        // --- 描画関数を補間対応に変更 ---
+        function drawSnakePart(interpolatedX, interpolatedY) {
+            snakeCtx.fillStyle = '#2DB97B';
             snakeCtx.strokeStyle = '#121212';
-            snakeCtx.fillRect(snakePart.x * gridSize, snakePart.y * gridSize, gridSize, gridSize);
-            snakeCtx.strokeRect(snakePart.x * gridSize, snakePart.y * gridSize, gridSize, gridSize);
+            snakeCtx.fillRect(interpolatedX * gridSize, interpolatedY * gridSize, gridSize, gridSize);
+            snakeCtx.strokeRect(interpolatedX * gridSize, interpolatedY * gridSize, gridSize, gridSize);
         }
-        function drawSnake() { snake.forEach(drawSnakePart); }
+
+        function drawSnake(progress) {
+             snake.forEach((part, index) => {
+                // 1フレーム前のパーツの位置を取得
+                // 蛇が伸びた瞬間の新しいパーツは、現在の位置にそのまま描画
+                const prevPart = previousSnake[index] || part;
+
+                // 2つの位置の間を線形補間
+                const interpolatedX = prevPart.x + (part.x - prevPart.x) * progress;
+                const interpolatedY = prevPart.y + (part.y - prevPart.y) * progress;
+
+                drawSnakePart(interpolatedX, interpolatedY);
+            });
+        }
+        
         function drawFood() {
-            snakeCtx.fillStyle = '#FD3A73'; // theme-pink
+            snakeCtx.fillStyle = '#FD3A73';
             snakeCtx.strokeStyle = '#121212';
             snakeCtx.fillRect(food.x * gridSize, food.y * gridSize, gridSize, gridSize);
             snakeCtx.strokeRect(food.x * gridSize, food.y * gridSize, gridSize, gridSize);
         }
 
-        // 蛇の移動とロジック
+        // --- ロジック関数を更新 ---
         function moveSnake() {
+            // 移動前の状態を保存
+            previousSnake = JSON.parse(JSON.stringify(snake));
+
             const head = {x: snake[0].x + dx, y: snake[0].y + dy};
             if (checkGameOver(head)) {
                 isGameOver = true;
@@ -308,16 +340,18 @@
             if (hasEatenFood) {
                 score++;
                 document.getElementById('game-score').textContent = `Score: ${score}`;
-                updateHighScore(score); // Firebaseのハイスコアを更新
+                // スコアに応じてゲーム速度を上げる (最小50ms)
+                gameSpeed = Math.max(50, 150 - score * 3);
+                updateHighScore(score);
                 createFood();
             } else {
                 snake.pop();
             }
         }
 
-        // ゲームオーバー判定
         function checkGameOver(head) {
-            for (let i = 4; i < snake.length; i++) { if (head.x === snake[i].x && head.y === snake[i].y) return true; }
+            // 自分自身に衝突したかチェック
+            for (let i = 1; i < snake.length; i++) { if (head.x === snake[i].x && head.y === snake[i].y) return true; }
             const hitLeftWall = head.x < 0;
             const hitRightWall = head.x >= tileCount;
             const hitTopWall = head.y < 0;
@@ -325,21 +359,19 @@
             return hitLeftWall || hitRightWall || hitTopWall || hitBottomWall;
         }
 
-        // 餌の生成
         function randomTile(min = 0, max = tileCount - 1) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+        
         function createFood() {
             food = {x: randomTile(), y: randomTile()};
             snake.forEach(function isFoodOnSnake(part) { if (part.x === food.x && part.y === food.y) createFood(); });
         }
 
-        // ゲームオーバー処理
         function gameOver() {
             stopSnakeGame();
             alert(`ゲームオーバー！\n最終スコア: ${score}`);
             document.getElementById('start-game-btn').style.display = 'block';
         }
-
-        // キーボード操作
+        
         function changeDirection(event) {
             const LEFT_KEY = 37; const RIGHT_KEY = 39; const UP_KEY = 38; const DOWN_KEY = 40;
             if (changingDirection) return;
@@ -353,7 +385,6 @@
         }
         document.addEventListener('keydown', changeDirection);
 
-        // タッチ操作（スワイプ）
         let touchStartX = 0, touchStartY = 0;
         snakeCanvas.addEventListener('touchstart', e => { e.preventDefault(); touchStartX = e.changedTouches[0].screenX; touchStartY = e.changedTouches[0].screenY; }, { passive: false });
         snakeCanvas.addEventListener('touchend', e => { e.preventDefault(); let touchEndX = e.changedTouches[0].screenX; let touchEndY = e.changedTouches[0].screenY; handleSwipe(touchEndX, touchEndY); }, { passive: false });
@@ -373,15 +404,10 @@
         async function updateHighScore(score) { if (!loggedInUserId || !score) return; try { const userRef = db.collection('users').doc(loggedInUserId); const doc = await userRef.get(); if (doc.exists) { const currentHighScore = doc.data().pongHighScore || 0; if (score > currentHighScore) { await userRef.update({ pongHighScore: score }); console.log(`ハイスコア更新: ${score}点`); } } } catch(error) { console.error("ハイスコア更新エラー:", error); } }
         
         // =======================================================
-        // ▲▲▲ Snake Game Logic (ここまで変更) ▲▲▲
+        // ▲▲▲ Snake Game Logic (ここまで差し替え) ▲▲▲
         // =======================================================
         
-        // =======================================================
-        // Ranking Logic
-        // =======================================================
         async function renderRanking() { const rankingList = document.getElementById('ranking-list'); rankingList.innerHTML = "<p>ランキングを読み込み中...</p>"; try { const snapshot = await db.collection('users').orderBy('pongHighScore', 'desc').limit(50).get(); rankingList.innerHTML = ""; if (snapshot.empty) { rankingList.innerHTML = "<p>まだ誰もプレイしていません。</p>"; return; } let rank = 1; snapshot.forEach(doc => { const user = doc.data(); if (!user.pongHighScore) return; const imageUrl = user.photoURL || '/Deaikei/images/user (1).png'; rankingList.innerHTML += `<div class="ranking-item"><div class="ranking-rank">${rank}</div><img src="${imageUrl}" class="ranking-avatar"><div class="ranking-info"><h4>${sanitizeHTML(user.name)}</h4><p>${sanitizeHTML(user.faculty)}・${sanitizeHTML(user.grade)}</p></div><div class="ranking-score">${user.pongHighScore}</div></div>`; rank++; }); } catch (error) { console.error("ランキング取得エラー:", error); rankingList.innerHTML = "<p>ランキングの取得に失敗しました。</p>"; } }
-        
-        // Other Helper Functions
         async function renderMatches() { if (!loggedInUserId) return; const matchList = document.getElementById('match-list'); matchList.innerHTML = "マッチング情報を読み込み中..."; try { const myDoc = await db.collection('users').doc(loggedInUserId).get(); const myBlockedUsers = (myDoc.data() || {}).blockedUsers || []; const myLikesSnapshot = await db.collection('likes').where('from', '==', loggedInUserId).get(); const likedByMe = myLikesSnapshot.docs.map(doc => doc.data().to); if (likedByMe.length === 0) { matchList.innerHTML = "まだマッチングした相手がいません。"; return; } const chunkedLikedByMe = []; for (let i = 0; i < likedByMe.length; i += 10) { chunkedLikedByMe.push(likedByMe.slice(i, i + 10)); } const matchedIds = []; for (const chunk of chunkedLikedByMe) { const likedMeBackSnapshot = await db.collection('likes').where('to', '==', loggedInUserId).where('from', 'in', chunk).get(); likedMeBackSnapshot.forEach(doc => matchedIds.push(doc.data().from)); } if (matchedIds.length === 0) { matchList.innerHTML = "まだマッチングした相手がいません。"; return; } const userPromises = matchedIds.map(id => db.collection('users').doc(id).get()); const userDocs = await Promise.all(userPromises); matchList.innerHTML = ""; userDocs.forEach(doc => { if (!doc.exists) return; const user = doc.data(); if (user.isBanned || myBlockedUsers.includes(user.uid) || (user.blockedUsers && user.blockedUsers.includes(loggedInUserId))) return; const imageUrl = user.photoURL || '/Deaikei/images/user (1).png'; const safeName = sanitizeHTML(user.name); const safeStudentId = sanitizeHTML(user.studentId || ''); const safeFaculty = sanitizeHTML(user.faculty); const safeGrade = sanitizeHTML(user.grade); matchList.innerHTML += `<div class="match-item" onclick="openChat('${user.uid}', '${user.name}', '${imageUrl}', '${user.studentId || ''}')"><img src="${imageUrl}" class="match-avatar"><div class="match-info"><h4>${safeName} <small>(${safeStudentId})</small></h4><p>${safeFaculty}・${safeGrade}</p></div><button class="match-user-action-btn" onclick="handleUserAction(event, '${user.uid}', '${user.name}')">•••</button></div>`; }); if (matchList.innerHTML === "") { matchList.innerHTML = "表示できるマッチング相手がいません。"; } } catch (error) { console.error("マッチングリスト取得エラー:", error); matchList.innerHTML = "情報の取得に失敗しました。"; } }
         async function handleUserAction(event, userId, userName) { if (event && typeof event.stopPropagation === 'function') { event.stopPropagation(); } const action = prompt(`'${userName}'さんへの操作を選択してください。\n1: ブロック\n2: 通報\n(数字を入力してください)`); if (action === '1') { blockUser(userId, userName); } else if (action === '2') { reportUser(userId, userName); } }
         async function blockUser(userId, userName) { if (!confirm(`'${userName}'さんをブロックしますか？\nブロックすると、お互いの画面に二度と表示されなくなります。`)) return; try { await db.collection('users').doc(loggedInUserId).update({ blockedUsers: firebase.firestore.FieldValue.arrayUnion(userId) }); alert(`'${userName}'さんをブロックしました。`); const card = document.querySelector('.profile-card'); if (card && card.dataset.userId === userId) { handleNope(); } if (document.getElementById('matches-screen').classList.contains('active')) { renderMatches(); } } catch (error) { console.error("ブロック処理エラー:", error); alert("ブロックに失敗しました。"); } }
