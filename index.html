@@ -21,13 +21,11 @@
         .profile-card.exit-like { transform: translateX(150%) rotate(30deg); opacity: 0; }
         .profile-pic { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
         
-        /* ▼▼▼ プロフィールカードのタグ見切れ修正 ▼▼▼ */
         .profile-info { 
             position: relative; z-index: 2; padding: 25px; 
             background: linear-gradient(to top, rgba(0,0,0,0.95) 30%, transparent); 
             max-height: 60%; overflow-y: auto;
         }
-        /* ▲▲▲ ここまで ▲▲▲ */
 
         .profile-header { display: flex; justify-content: space-between; align-items: center; }
         .profile-info h3 { font-size: 28px; margin: 0; }
@@ -191,7 +189,7 @@
         let loggedInUserId = null, allUsers = [], currentUserIndex = 0;
         let currentChatRoomId = null, unsubscribeChat = null;
         let userInterestsCache = [];
-        let usersCache = {}; // ユーザー情報をキャッシュするオブジェクト
+        let usersCache = {};
 
         const navHTML = `
             <button onclick="showTab('main-screen')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12.75 2.25A2.25 2.25 0 0010.5 4.5v15a2.25 2.25 0 002.25 2.25h.518a.75.75 0 00.74-1.023l-.26-1.037a1.5 1.5 0 011.025-1.742 1.5 1.5 0 011.742 1.025l.26 1.037a.75.75 0 00.74 1.023h.518a2.25 2.25 0 002.25-2.25v-15a2.25 2.25 0 00-2.25-2.25H12.75zM12 4.5h6.75v15H12V4.5zM3.75 6A2.25 2.25 0 001.5 8.25v9A2.25 2.25 0 003.75 19.5h.518a.75.75 0 00.74-1.023l-.26-1.037a1.5 1.5 0 011.025-1.742 1.5 1.5 0 011.742 1.025l.26 1.037A.75.75 0 008.482 19.5h.518A2.25 2.25 0 0011.25 17.25v-9A2.25 2.25 0 009 6H3.75zM3 8.25h6.75v9H3v-9z" /></svg></button>
@@ -217,24 +215,15 @@
                 const userDoc = await db.collection('users').doc(user.uid).get();
                 if (userDoc.exists) {
                     const userData = userDoc.data();
-                    if (!userData.studentId && user.email) {
-                        await db.collection('users').doc(user.uid).update({ studentId: user.email.split('@')[0] });
-                    }
-                    await loadUsersForCards();
-                    showTab('main-screen');
-                } else {
-                    showTab('profile-setup-screen');
-                }
-            } else {
-                loggedInUserId = null; allUsers = []; currentUserIndex = 0; showTab('login-screen');
-            }
+                    if (!userData.studentId && user.email) { await db.collection('users').doc(user.uid).update({ studentId: user.email.split('@')[0] }); }
+                    await loadUsersForCards(); showTab('main-screen');
+                } else { showTab('profile-setup-screen'); }
+            } else { loggedInUserId = null; allUsers = []; currentUserIndex = 0; showTab('login-screen'); }
         });
         
         function showTab(screenId) {
             if (unsubscribeChat) { unsubscribeChat(); unsubscribeChat = null; }
-            stopSnakeGame();
-            stopPixelGame();
-            stopShiritoriGame();
+            stopSnakeGame(); stopPixelGame(); stopShiritoriGame();
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             const screen = document.getElementById(screenId);
             if (screen) screen.classList.add('active');
@@ -258,15 +247,13 @@
         }
 
         async function handleProfileSetup() { const name = document.getElementById('register-name').value.trim(); if (!name) { alert('ニックネームは必須です。'); return; } const selectedAvatar = document.querySelector('#avatar-selection-grid .avatar-option.selected'); let avatarUrl = selectedAvatar ? selectedAvatar.dataset.url : '/Deaikei/images/user (1).png'; const user = auth.currentUser; if (!user) return; const studentId = user.email.split('@')[0]; const profileData = { uid: user.uid, studentId: studentId, name: name, photoURL: avatarUrl, faculty: document.getElementById('register-faculty').value, grade: document.getElementById('register-grade').value, interests: [], isBanned: false, blockedUsers: [], pongHighScore: 0, lastPixelPlacedDate: "" }; await db.collection('users').doc(user.uid).set(profileData); await loadUsersForCards(); showTab('main-screen'); }
-        
         async function loadUsersForCards() { if (!loggedInUserId) return; const stack = document.getElementById('card-stack'); stack.innerHTML = `<div id="no-more-cards"><h3>ユーザーを探しています...</h3></div>`; try { const myDoc = await db.collection('users').doc(loggedInUserId).get(); const myData = myDoc.data() || {}; const myBlockedUsers = myData.blockedUsers || []; const myLikesSnapshot = await db.collection('likes').where('from', '==', loggedInUserId).get(); const swipedUserIds = myLikesSnapshot.docs.map(doc => doc.data().to); swipedUserIds.push(...myBlockedUsers); const usersSnapshot = await db.collection('users').get(); allUsers = usersSnapshot.docs.map(doc => doc.data()).filter(user => user && user.uid && user.uid !== loggedInUserId && !user.isBanned && !swipedUserIds.includes(user.uid) && !(user.blockedUsers && user.blockedUsers.includes(loggedInUserId))); currentUserIndex = 0; renderCurrentCard(); } catch (error) { console.error("ユーザー読み込みエラー:", error); stack.innerHTML = `<div id="no-more-cards"><h3>エラーが発生しました</h3><p>ユーザー情報の取得に失敗しました。</p></div>`; } }
         function renderCurrentCard() { const stack = document.getElementById('card-stack'); const actions = document.getElementById('actions-area'); if (currentUserIndex >= allUsers.length) { stack.innerHTML = `<div id="no-more-cards"><h3>表示できる相手がいません</h3><p>新しいユーザーが参加するまで、<br>しばらくお待ちください。</p></div>`; actions.style.display = 'none'; return; } actions.style.display = 'flex'; const user = allUsers[currentUserIndex]; const imageUrl = user.photoURL || '/Deaikei/images/user (1).png'; const safeName = sanitizeHTML(user.name); const safeStudentId = sanitizeHTML(user.studentId || ''); const safeFaculty = sanitizeHTML(user.faculty); const safeGrade = sanitizeHTML(user.grade); const tagsHTML = (user.interests || []).map(tag => `<div class="profile-tag">${sanitizeHTML(tag)}</div>`).join(''); let dailyTopicHTML = ''; if (user.dailyAnswer && user.dailyTopicQuestion) { dailyTopicHTML = `<div class="daily-topic-area"><div class="question">${sanitizeHTML(user.dailyTopicQuestion)}</div><div class="answer">${sanitizeHTML(user.dailyAnswer)}</div></div>`; } stack.innerHTML = `<div class="profile-card" data-user-id="${user.uid}"><img src="${imageUrl}" class="profile-pic"><div class="profile-info"><div class="profile-header"><h3>${safeName} <small>(${safeStudentId})</small></h3><button class="user-action-btn" onclick="handleUserAction('${user.uid}', '${user.name}')">•••</button></div><p>${safeFaculty}・${safeGrade}</p><div class="profile-tags">${tagsHTML}</div>${dailyTopicHTML}</div></div>`; }
-
         async function handleNope() { if (currentUserIndex >= allUsers.length) return; const card = document.querySelector('.profile-card'); if (card) { card.classList.add('exit-nope'); const targetUser = allUsers[currentUserIndex]; if (targetUser && targetUser.uid) { await db.collection('likes').add({ from: loggedInUserId, to: targetUser.uid, type: 'nope' }); } setTimeout(() => { currentUserIndex++; renderCurrentCard(); }, 400); } }
         async function handleLikeClick() { if (currentUserIndex >= allUsers.length || !loggedInUserId) return; const targetUser = allUsers[currentUserIndex]; if (!targetUser || !targetUser.uid) { console.error("Invalid target user data. Skipping."); currentUserIndex++; renderCurrentCard(); return; } const card = document.querySelector('.profile-card'); if (card) { card.classList.add('exit-like'); try { await db.collection('likes').add({ from: loggedInUserId, to: targetUser.uid }); const result = await db.collection('likes').where('from', '==', targetUser.uid).where('to', '==', loggedInUserId).get(); if (!result.empty) { alert(`🎉 ${targetUser.name}さんとマッチングしました！`); } setTimeout(() => { currentUserIndex++; renderCurrentCard(); }, 400); } catch (error) { console.error("Like処理エラー:", error); setTimeout(() => { currentUserIndex++; renderCurrentCard(); }, 400); } } }
         
         // =======================================================
-        // ▼▼▼ Snake Game Logic ▼▼▼
+        // ▼▼▼ Game Logics ▼▼▼
         // =======================================================
         const snakeCanvas = document.getElementById('snake-canvas'); const snakeCtx = snakeCanvas.getContext('2d'); let animationFrameId; let lastLogicUpdateTime = 0; let gameSpeed = 150; let gridSize = 20; let tileCount; let snake; let previousSnake; let food; let score; let dx, dy; let changingDirection; let isGameOver; function resizeSnakeCanvas() { const container = snakeCanvas.parentElement; const size = Math.min(container.clientWidth * 0.95, 400); tileCount = Math.floor(size / gridSize); snakeCanvas.width = tileCount * gridSize; snakeCanvas.height = tileCount * gridSize; }
         window.addEventListener('resize', resizeSnakeCanvas); function initSnakeGame() { resizeSnakeCanvas(); isGameOver = false; document.getElementById('start-game-btn').style.display = 'block'; document.getElementById('game-score').textContent = "Score: 0"; snake = [ {x: Math.floor(tileCount / 2), y: Math.floor(tileCount / 2)}, {x: Math.floor(tileCount / 2) - 1, y: Math.floor(tileCount / 2)}, {x: Math.floor(tileCount / 2) - 2, y: Math.floor(tileCount / 2)} ]; previousSnake = JSON.parse(JSON.stringify(snake)); score = 0; gameSpeed = 150; dx = 1; dy = 0; createFood(); drawInitialState(); }
@@ -287,11 +274,7 @@
         function handleSwipe(touchEndX, touchEndY) { const dxSwipe = touchEndX - touchStartX; const dySwipe = touchEndY - touchStartY; if (changingDirection) return; const goingUp = dy === -1; const goingDown = dy === 1; const goingRight = dx === 1; const goingLeft = dx === -1; if (Math.abs(dxSwipe) > Math.abs(dySwipe)) { if (dxSwipe > 0 && !goingLeft) { dx = 1; dy = 0; changingDirection = true; } else if (dxSwipe < 0 && !goingRight) { dx = -1; dy = 0; changingDirection = true; } } else { if (dySwipe > 0 && !goingUp) { dx = 0; dy = 1; changingDirection = true; } else if (dySwipe < 0 && !goingDown) { dx = 0; dy = -1; changingDirection = true; } } }
         async function updateHighScore(score) { if (!loggedInUserId || !score) return; try { const userRef = db.collection('users').doc(loggedInUserId); const doc = await userRef.get(); if (doc.exists) { const currentHighScore = doc.data().pongHighScore || 0; if (score > currentHighScore) { await userRef.update({ pongHighScore: score }); } } } catch(error) { console.error("ハイスコア更新エラー:", error); } }
         
-        // =======================================================
-        // ▼▼▼ Pixel Game Logic (10x10に修正) ▼▼▼
-        // =======================================================
-        const pixelCanvas = document.getElementById('pixel-canvas'); const pixelCtx = pixelCanvas.getContext('2d'); const pixelStatusEl = document.getElementById('pixel-status'); const colorPalette = document.getElementById('color-palette'); let unsubscribePixels; let canPlacePixelToday = false; let selectedColor = 'FF0000';
-        const PIXEL_GRID_SIZE = 10; // サイズを10に変更
+        const pixelCanvas = document.getElementById('pixel-canvas'); const pixelCtx = pixelCanvas.getContext('2d'); const pixelStatusEl = document.getElementById('pixel-status'); const colorPalette = document.getElementById('color-palette'); let unsubscribePixels; let canPlacePixelToday = false; let selectedColor = 'FF0000'; const PIXEL_GRID_SIZE = 10;
         function getTodayDateString() { const now = new Date(); const jstOffset = 9 * 60 * 60 * 1000; return new Date(now.getTime() + jstOffset).toISOString().split('T')[0]; }
         function initPixelGame() { const container = pixelCanvas.parentElement; const size = Math.min(container.clientWidth * 0.95, 400); pixelCanvas.width = size; pixelCanvas.height = size; checkPixelAbility(); if (unsubscribePixels) unsubscribePixels(); unsubscribePixels = db.collection("canvas_pixels").onSnapshot(snapshot => { const pixels = {}; snapshot.forEach(doc => { pixels[doc.id] = doc.data().color; }); drawAllPixels(pixels); }); pixelCanvas.addEventListener('click', handlePixelCanvasClick); colorPalette.addEventListener('click', handleColorSelection); }
         function stopPixelGame() { if (unsubscribePixels) { unsubscribePixels(); unsubscribePixels = null; } pixelCanvas.removeEventListener('click', handlePixelCanvasClick); colorPalette.removeEventListener('click', handleColorSelection); }
@@ -299,108 +282,19 @@
         function drawAllPixels(pixels) { const pixelSize = pixelCanvas.width / PIXEL_GRID_SIZE; pixelCtx.fillStyle = '#FFFFFF'; pixelCtx.fillRect(0, 0, pixelCanvas.width, pixelCanvas.height); for (let y = 0; y < PIXEL_GRID_SIZE; y++) { for (let x = 0; x < PIXEL_GRID_SIZE; x++) { const docId = `${x}_${y}`; if (pixels[docId]) { pixelCtx.fillStyle = `#${pixels[docId]}`; pixelCtx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize); } } } }
         function handleColorSelection(event) { if (event.target.classList.contains('color-choice')) { document.querySelectorAll('.color-choice').forEach(el => el.classList.remove('selected')); event.target.classList.add('selected'); selectedColor = event.target.dataset.color; } }
         async function handlePixelCanvasClick(event) { if (!canPlacePixelToday) return; const rect = pixelCanvas.getBoundingClientRect(); const pixelSize = pixelCanvas.width / PIXEL_GRID_SIZE; const x = Math.floor((event.clientX - rect.left) / pixelSize); const y = Math.floor((event.clientY - rect.top) / pixelSize); if (x < 0 || x >= PIXEL_GRID_SIZE || y < 0 || y >= PIXEL_GRID_SIZE) return; const docId = `${x}_${y}`; const pixelData = { color: selectedColor, userId: loggedInUserId, timestamp: firebase.firestore.FieldValue.serverTimestamp() }; canPlacePixelToday = false; pixelStatusEl.textContent = "保存中..."; try { await db.collection('canvas_pixels').doc(docId).set(pixelData); await db.collection('users').doc(loggedInUserId).update({ lastPixelPlacedDate: getTodayDateString() }); pixelStatusEl.textContent = "ピクセルを置きました！続きはまた明日。"; } catch (error) { console.error("ピクセル保存エラー:", error); pixelStatusEl.textContent = "エラーが発生しました。もう一度試してください。"; canPlacePixelToday = true; } }
-        
-        // =======================================================
-        // ▼▼▼ Shiritori Game Logic ▼▼▼
-        // =======================================================
-        let unsubscribeShiritori;
-        const shiritoriTurnInfoEl = document.getElementById('shiritori-turn-info');
-        const shiritoriHistoryEl = document.getElementById('shiritori-history');
-        const shiritoriInput = document.getElementById('shiritori-input');
-        const shiritoriSubmitBtn = document.getElementById('shiritori-submit-btn');
 
-        function stopShiritoriGame() {
-            if (unsubscribeShiritori) {
-                unsubscribeShiritori();
-                unsubscribeShiritori = null;
-            }
-        }
+        let unsubscribeShiritori; const shiritoriTurnInfoEl = document.getElementById('shiritori-turn-info'); const shiritoriHistoryEl = document.getElementById('shiritori-history'); const shiritoriInput = document.getElementById('shiritori-input'); const shiritoriSubmitBtn = document.getElementById('shiritori-submit-btn');
+        function stopShiritoriGame() { if (unsubscribeShiritori) { unsubscribeShiritori(); unsubscribeShiritori = null; } }
+        async function getUserName(userId) { if (usersCache[userId]) return usersCache[userId]; try { const userDoc = await db.collection('users').doc(userId).get(); if (userDoc.exists) { const name = userDoc.data().name; usersCache[userId] = name; return name; } } catch (error) { console.error("ユーザー名取得エラー:", error); } return "不明"; }
+        function initShiritoriGame() { if (!loggedInUserId) return; const gameRef = db.collection('shiritori').doc('currentGame'); unsubscribeShiritori = gameRef.onSnapshot(async (doc) => { if (!doc.exists) { shiritoriTurnInfoEl.textContent = "まだしりとりが始まっていません。最初の言葉をどうぞ！"; shiritoriInput.disabled = false; shiritoriSubmitBtn.disabled = false; return; } await renderShiritoriGame(doc.data()); }); }
+        async function renderShiritoriGame(gameData) { const { words, currentPlayerId } = gameData; shiritoriHistoryEl.innerHTML = ''; for (const entry of words) { const userName = await getUserName(entry.userId); const div = document.createElement('div'); div.classList.add('shiritori-word'); div.classList.add(entry.userId === loggedInUserId ? 'mine' : 'others'); div.innerHTML = `${sanitizeHTML(entry.word)} <small>${sanitizeHTML(userName)}</small>`; shiritoriHistoryEl.appendChild(div); }
+        shiritoriHistoryEl.scrollTop = shiritoriHistoryEl.scrollHeight; const lastWordEntry = words[words.length - 1]; const nextChar = getLastChar(lastWordEntry.word).nextChar; const currentPlayerName = await getUserName(currentPlayerId); if (currentPlayerId === loggedInUserId) { shiritoriTurnInfoEl.innerHTML = `あなたのターンです！<br>「${nextChar}」から始まる言葉を入力してください。`; shiritoriInput.disabled = false; shiritoriSubmitBtn.disabled = false; } else { shiritoriTurnInfoEl.innerHTML = `現在 ${sanitizeHTML(currentPlayerName)} さんのターンです。<br>次の文字：「${nextChar}」`; shiritoriInput.disabled = true; shiritoriSubmitBtn.disabled = true; } }
+        function getLastChar(word) { let lastChar = word.slice(-1); let nextChar = lastChar; if (lastChar === 'ー') { lastChar = word.slice(-2, -1); nextChar = lastChar; } const smallToLarge = {'ぁ':'あ', 'ぃ':'い', 'ぅ':'う', 'ぇ':'え', 'ぉ':'お', 'っ':'つ', 'ゃ':'や', 'ゅ':'ゆ', 'ょ':'よ'}; if (smallToLarge[lastChar]) { nextChar = smallToLarge[lastChar]; } const voicedMap = {'じ':'ぢ', 'ず':'づ'}; if (voicedMap[nextChar]) { return { lastChar, nextChar, altNextChar: voicedMap[nextChar] }; } const voicedMapReverse = {'ぢ':'じ', 'づ':'ず'}; if (voicedMapReverse[nextChar]) { return { lastChar, nextChar, altNextChar: voicedMapReverse[nextChar] }; } return { lastChar, nextChar, altNextChar: null }; }
         
-        async function getUserName(userId) {
-            if (usersCache[userId]) return usersCache[userId];
-            try {
-                const userDoc = await db.collection('users').doc(userId).get();
-                if (userDoc.exists) {
-                    const name = userDoc.data().name;
-                    usersCache[userId] = name;
-                    return name;
-                }
-            } catch (error) { console.error("ユーザー名取得エラー:", error); }
-            return "不明なユーザー";
-        }
-        
-        function initShiritoriGame() {
-            if (!loggedInUserId) return;
-            const gameRef = db.collection('shiritori').doc('currentGame');
-            
-            unsubscribeShiritori = gameRef.onSnapshot(async (doc) => {
-                if (!doc.exists) {
-                    // ゲームがまだ始まっていない場合
-                    shiritoriTurnInfoEl.textContent = "まだしりとりが始まっていません。最初の言葉を入力してください！";
-                    shiritoriInput.disabled = false;
-                    shiritoriSubmitBtn.disabled = false;
-                    return;
-                }
-                const gameData = doc.data();
-                await renderShiritoriGame(gameData);
-            });
-        }
-        
-        async function renderShiritoriGame(gameData) {
-            const { words, currentPlayerId } = gameData;
-            shiritoriHistoryEl.innerHTML = '';
-            for (const entry of words) {
-                const userName = await getUserName(entry.userId);
-                const div = document.createElement('div');
-                div.classList.add('shiritori-word');
-                div.classList.add(entry.userId === loggedInUserId ? 'mine' : 'others');
-                div.innerHTML = `${sanitizeHTML(entry.word)} <small>${sanitizeHTML(userName)}</small>`;
-                shiritoriHistoryEl.appendChild(div);
-            }
-            shiritoriHistoryEl.scrollTop = shiritoriHistoryEl.scrollHeight;
-            
-            const lastWordEntry = words[words.length - 1];
-            const nextChar = getLastChar(lastWordEntry.word).nextChar;
-
-            const currentPlayerName = await getUserName(currentPlayerId);
-            if (currentPlayerId === loggedInUserId) {
-                shiritoriTurnInfoEl.innerHTML = `あなたのターンです！<br>「${nextChar}」から始まる言葉を入力してください。`;
-                shiritoriInput.disabled = false;
-                shiritoriSubmitBtn.disabled = false;
-            } else {
-                shiritoriTurnInfoEl.innerHTML = `現在 ${sanitizeHTML(currentPlayerName)} さんのターンです。<br>次の文字：「${nextChar}」`;
-                shiritoriInput.disabled = true;
-                shiritoriSubmitBtn.disabled = true;
-            }
-        }
-        
-        function getLastChar(word) {
-            let lastChar = word.slice(-1);
-            let nextChar = lastChar;
-            if (lastChar === 'ー') {
-                lastChar = word.slice(-2, -1);
-                nextChar = lastChar;
-            }
-            const smallToLarge = {'ぁ':'あ', 'ぃ':'い', 'ぅ':'う', 'ぇ':'え', 'ぉ':'お', 'っ':'つ', 'ゃ':'や', 'ゅ':'ゆ', 'ょ':'よ'};
-            if (smallToLarge[lastChar]) {
-                nextChar = smallToLarge[lastChar];
-            }
-            const voicedMap = {'じ':'ぢ', 'ず':'づ'};
-            if (voicedMap[nextChar]) {
-                return { lastChar, nextChar, altNextChar: voicedMap[nextChar] };
-            }
-            const voicedMapReverse = {'ぢ':'じ', 'づ':'ず'};
-            if (voicedMapReverse[nextChar]) {
-                return { lastChar, nextChar, altNextChar: voicedMapReverse[nextChar] };
-            }
-            return { lastChar, nextChar, altNextChar: null };
-        }
-
+        // ▼▼▼ ここを修正 ▼▼▼
         async function handleShiritoriSubmit() {
             const word = shiritoriInput.value.trim();
             if (!word) return;
-
-            // バリデーション
             if (!/^[ぁ-んー]+$/.test(word)) { alert("ひらがなで入力してください。"); return; }
             if (word.slice(-1) === 'ん') { alert("「ん」で終わる言葉は使えません。"); return; }
             
@@ -410,12 +304,14 @@
             try {
                 await db.runTransaction(async (transaction) => {
                     const gameDoc = await transaction.get(gameRef);
+                    // タイムスタンプをクライアントのDateオブジェクトに変更
+                    const newWordEntry = { word, userId: loggedInUserId, timestamp: new Date() };
+
                     if (!gameDoc.exists) { // ゲーム初回
-                        const newWordEntry = { word, userId: loggedInUserId, timestamp: firebase.firestore.FieldValue.serverTimestamp() };
                         transaction.set(gameRef, { 
                             words: [newWordEntry],
                             playerQueue: [loggedInUserId],
-                            currentPlayerId: loggedInUserId, // 初回は自分自身を次に指名
+                            currentPlayerId: loggedInUserId,
                         });
                         return;
                     }
@@ -426,11 +322,11 @@
                     
                     const lastWordEntry = gameData.words[gameData.words.length - 1];
                     const { nextChar, altNextChar } = getLastChar(lastWordEntry.word);
-                    if (word.charAt(0) !== nextChar && word.charAt(0) !== altNextChar) {
+                    if (word.charAt(0) !== nextChar && (altNextChar ? word.charAt(0) !== altNextChar : true)) {
                         throw new Error(`「${nextChar}」から始まる言葉を入力してください。`);
                     }
 
-                    const newWords = [...gameData.words, { word, userId: loggedInUserId, timestamp: firebase.firestore.FieldValue.serverTimestamp() }];
+                    const newWords = [...gameData.words, newWordEntry];
                     
                     let playerQueue = gameData.playerQueue || [];
                     if (!playerQueue.includes(loggedInUserId)) playerQueue.push(loggedInUserId);
@@ -449,14 +345,14 @@
                 alert(error.message);
                 console.error("しりとり更新エラー: ", error);
             } finally {
-                // 自分のターンなら再度有効化
                 const doc = await gameRef.get();
-                if (doc.exists() && doc.data().currentPlayerId === loggedInUserId) {
+                if (!doc.exists() || (doc.exists() && doc.data().currentPlayerId === loggedInUserId)) {
                     shiritoriSubmitBtn.disabled = false;
                 }
             }
         }
-        
+        // ▲▲▲ ここまで修正 ▲▲▲
+
         // =======================================================
         // ▼▼▼ Other Functions ▼▼▼
         // =======================================================
