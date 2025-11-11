@@ -281,7 +281,36 @@
         async function checkPixelAbility() { if (!loggedInUserId) return; pixelStatusEl.textContent = "ステータスを確認中..."; try { const userDoc = await db.collection('users').doc(loggedInUserId).get(); if (userDoc.exists) { const userData = userDoc.data(); const today = getTodayDateString(); if (userData.lastPixelPlacedDate === today) { canPlacePixelToday = false; pixelStatusEl.textContent = "今日の分はもう置きました。また明日！"; } else { canPlacePixelToday = true; pixelStatusEl.textContent = "好きな色を選んで、キャンバスをクリックしてください。"; } } } catch (error) { console.error("ユーザーデータ取得エラー:", error); pixelStatusEl.textContent = "エラーが発生しました。リロードしてください。"; } }
         function drawAllPixels(pixels) { const pixelSize = pixelCanvas.width / PIXEL_GRID_SIZE; pixelCtx.fillStyle = '#FFFFFF'; pixelCtx.fillRect(0, 0, pixelCanvas.width, pixelCanvas.height); for (let y = 0; y < PIXEL_GRID_SIZE; y++) { for (let x = 0; x < PIXEL_GRID_SIZE; x++) { const docId = `${x}_${y}`; if (pixels[docId]) { pixelCtx.fillStyle = `#${pixels[docId]}`; pixelCtx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize); } } } }
         function handleColorSelection(event) { if (event.target.classList.contains('color-choice')) { document.querySelectorAll('.color-choice').forEach(el => el.classList.remove('selected')); event.target.classList.add('selected'); selectedColor = event.target.dataset.color; } }
-        async function handlePixelCanvasClick(event) { if (!canPlacePixelToday) return; const rect = pixelCanvas.getBoundingClientRect(); const pixelSize = pixelCanvas.width / PIXEL_GRID_SIZE; const x = Math.floor((event.clientX - rect.left) / pixelSize); const y = Math.floor((event.clientY - rect.top) / pixelSize); if (x < 0 || x >= PIXEL_GRID_SIZE || y < 0 || y >= PIXEL_GRID_SIZE) return; const docId = `${x}_${y}`; const pixelData = { color: selectedColor, userId: loggedInUserId, timestamp: firebase.firestore.FieldValue.serverTimestamp() }; canPlacePixelToday = false; pixelStatusEl.textContent = "保存中..."; try { await db.collection('canvas_pixels').doc(docId).set(pixelData); await db.collection('users').doc(loggedInUserId).update({ lastPixelPlacedDate: getTodayDateString() }); pixelStatusEl.textContent = "ピクセルを置きました！続きはまた明日。"; } catch (error) { console.error("ピクセル保存エラー:", error); pixelStatusEl.textContent = "エラーが発生しました。もう一度試してください。"; canPlacePixelToday = true; } }
+        
+        // ▼▼▼ お絵描き部分のバグ修正 ▼▼▼
+        async function handlePixelCanvasClick(event) {
+            if (!canPlacePixelToday) return;
+            const pixelSize = pixelCanvas.width / PIXEL_GRID_SIZE;
+
+            // バグ修正: canvas要素に設定されたborder(枠線)を考慮するため、
+            // イベント座標から要素内の相対座標を取得できるoffsetX/offsetYを使用します。
+            // これにより、クリックしたピクセルがずれるバグを修正します。
+            const x = Math.floor(event.offsetX / pixelSize);
+            const y = Math.floor(event.offsetY / pixelSize);
+
+            if (x < 0 || x >= PIXEL_GRID_SIZE || y < 0 || y >= PIXEL_GRID_SIZE) return;
+            
+            const docId = `${x}_${y}`;
+            const pixelData = { color: selectedColor, userId: loggedInUserId, timestamp: firebase.firestore.FieldValue.serverTimestamp() };
+            
+            canPlacePixelToday = false;
+            pixelStatusEl.textContent = "保存中...";
+            try {
+                await db.collection('canvas_pixels').doc(docId).set(pixelData);
+                await db.collection('users').doc(loggedInUserId).update({ lastPixelPlacedDate: getTodayDateString() });
+                pixelStatusEl.textContent = "ピクセルを置きました！続きはまた明日。";
+            } catch (error) {
+                console.error("ピクセル保存エラー:", error);
+                pixelStatusEl.textContent = "エラーが発生しました。もう一度試してください。";
+                canPlacePixelToday = true;
+            }
+        }
+        // ▲▲▲ お絵描き部分のバグ修正ここまで ▲▲▲
 
         let unsubscribeShiritori; const shiritoriTurnInfoEl = document.getElementById('shiritori-turn-info'); const shiritoriHistoryEl = document.getElementById('shiritori-history'); const shiritoriInput = document.getElementById('shiritori-input'); const shiritoriSubmitBtn = document.getElementById('shiritori-submit-btn');
         function stopShiritoriGame() { if (unsubscribeShiritori) { unsubscribeShiritori(); unsubscribeShiritori = null; } }
@@ -291,7 +320,7 @@
         shiritoriHistoryEl.scrollTop = shiritoriHistoryEl.scrollHeight; const lastWordEntry = words[words.length - 1]; const nextChar = getLastChar(lastWordEntry.word).nextChar; const currentPlayerName = await getUserName(currentPlayerId); if (currentPlayerId === loggedInUserId) { shiritoriTurnInfoEl.innerHTML = `あなたのターンです！<br>「${nextChar}」から始まる言葉を入力してください。`; shiritoriInput.disabled = false; shiritoriSubmitBtn.disabled = false; } else { shiritoriTurnInfoEl.innerHTML = `現在 ${sanitizeHTML(currentPlayerName)} さんのターンです。<br>次の文字：「${nextChar}」`; shiritoriInput.disabled = true; shiritoriSubmitBtn.disabled = true; } }
         function getLastChar(word) { let lastChar = word.slice(-1); let nextChar = lastChar; if (lastChar === 'ー') { lastChar = word.slice(-2, -1); nextChar = lastChar; } const smallToLarge = {'ぁ':'あ', 'ぃ':'い', 'ぅ':'う', 'ぇ':'え', 'ぉ':'お', 'っ':'つ', 'ゃ':'や', 'ゅ':'ゆ', 'ょ':'よ'}; if (smallToLarge[lastChar]) { nextChar = smallToLarge[lastChar]; } const voicedMap = {'じ':'ぢ', 'ず':'づ'}; if (voicedMap[nextChar]) { return { lastChar, nextChar, altNextChar: voicedMap[nextChar] }; } const voicedMapReverse = {'ぢ':'じ', 'づ':'ず'}; if (voicedMapReverse[nextChar]) { return { lastChar, nextChar, altNextChar: voicedMapReverse[nextChar] }; } return { lastChar, nextChar, altNextChar: null }; }
         
-        // ▼▼▼ ここを修正 ▼▼▼
+        // ▼▼▼ しりとり部分のバグ修正 ▼▼▼
         async function handleShiritoriSubmit() {
             const word = shiritoriInput.value.trim();
             if (!word) return;
@@ -304,8 +333,9 @@
             try {
                 await db.runTransaction(async (transaction) => {
                     const gameDoc = await transaction.get(gameRef);
-                    // タイムスタンプをクライアントのDateオブジェクトに変更
-                    const newWordEntry = { word, userId: loggedInUserId, timestamp: new Date() };
+                    // バグ修正: ユーザーのPC時刻に依存しないよう、クライアントのDateオブジェクトではなく
+                    // Firestoreのサーバータイムスタンプを使用するように変更します。
+                    const newWordEntry = { word, userId: loggedInUserId, timestamp: firebase.firestore.FieldValue.serverTimestamp() };
 
                     if (!gameDoc.exists) { // ゲーム初回
                         transaction.set(gameRef, { 
@@ -322,14 +352,16 @@
                     
                     const lastWordEntry = gameData.words[gameData.words.length - 1];
                     const { nextChar, altNextChar } = getLastChar(lastWordEntry.word);
-                    if (word.charAt(0) !== nextChar && (altNextChar ? word.charAt(0) !== altNextChar : true)) {
+                    if (word.charAt(0) !== nextChar && (!altNextChar || word.charAt(0) !== altNextChar)) {
                         throw new Error(`「${nextChar}」から始まる言葉を入力してください。`);
                     }
 
                     const newWords = [...gameData.words, newWordEntry];
                     
                     let playerQueue = gameData.playerQueue || [];
-                    if (!playerQueue.includes(loggedInUserId)) playerQueue.push(loggedInUserId);
+                    if (!playerQueue.includes(loggedInUserId)) {
+                        playerQueue.push(loggedInUserId);
+                    }
                     const currentPlayerIndex = playerQueue.indexOf(gameData.currentPlayerId);
                     const nextPlayerIndex = (currentPlayerIndex + 1) % playerQueue.length;
                     const nextPlayerId = playerQueue[nextPlayerIndex];
@@ -345,13 +377,15 @@
                 alert(error.message);
                 console.error("しりとり更新エラー: ", error);
             } finally {
+                // トランザクション直後の状態を再確認してボタンの状態を決定する
                 const doc = await gameRef.get();
                 if (!doc.exists() || (doc.exists() && doc.data().currentPlayerId === loggedInUserId)) {
+                     // 自分のターンがまだ続く場合（参加者が1人など）のみボタンを有効化
                     shiritoriSubmitBtn.disabled = false;
                 }
             }
         }
-        // ▲▲▲ ここまで修正 ▲▲▲
+        // ▲▲▲ しりとり部分のバグ修正ここまで ▲▲▲
 
         // =======================================================
         // ▼▼▼ Other Functions ▼▼▼
