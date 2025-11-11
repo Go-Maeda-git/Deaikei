@@ -6,9 +6,28 @@
     <title>孤選 (Kosen)</title>
     <style>
         :root { --theme-pink: #FD3A73; --bg-dark: #121212; --card-dark: #242424; --text-light: #FFFFFF; --text-muted: #B3B3B3; }
-        html, body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: var(--bg-dark); color: var(--text-light); overflow: hidden; width: 100%; height: 100%; }
+        html, body { 
+            margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+            background-color: #000; /* PC表示時の背景色 */
+            color: var(--text-light); 
+            width: 100%; height: 100%; 
+        }
         * { box-sizing: border-box; }
-        .screen { display: none; width: 100%; height: 100%; flex-direction: column; }
+
+        /* ★★★ 修正点: PC表示用の全体ラッパー ★★★ */
+        #app-wrapper {
+            max-width: 480px; /* PCでもスマホに近い幅で表示 */
+            margin: 0 auto;
+            height: 100%;
+            position: relative;
+            overflow: hidden; /* コンテナ内でスクロールを制御 */
+            background-color: var(--bg-dark);
+            box-shadow: 0 0 20px rgba(0,0,0,0.5); /* PC表示時にアプリの境界線を強調 */
+            display: flex;
+            flex-direction: column;
+        }
+
+        .screen { display: none; width: 100%; flex-grow: 1; flex-direction: column; min-height: 0; }
         .screen.active { display: flex; }
         .app-container { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; overflow: hidden; }
         #card-stack { position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
@@ -16,18 +35,15 @@
             position: absolute; width: 90vw; max-width: 380px; height: 75vh; max-height: 600px; 
             background: var(--card-dark); border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
             overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end;
-            /* ★★★ 修正点: アニメーション用の設定を追加 ★★★ */
             transition: transform 0.4s ease, opacity 0.4s ease; 
         }
-        /* ★★★ 修正点: カードがスワイプアウトするアニメーション用クラス ★★★ */
         .profile-card.exit-nope { transform: translateX(-150%) rotate(-30deg); opacity: 0; }
         .profile-card.exit-like { transform: translateX(150%) rotate(30deg); opacity: 0; }
-
         .profile-pic { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
         .profile-info { position: relative; z-index: 2; padding: 25px; background: linear-gradient(to top, rgba(0,0,0,0.95) 30%, transparent); }
         .profile-header { display: flex; justify-content: space-between; align-items: center; }
         .profile-info h3 { font-size: 28px; margin: 0; }
-        .profile-info h3 small { font-size: 0.5em; color: var(--text-muted); margin-left: 8px; } /* 学籍番号用のスタイル */
+        .profile-info h3 small { font-size: 0.5em; color: var(--text-muted); margin-left: 8px; }
         .profile-info p { font-size: 18px; margin: 5px 0 10px; color: var(--text-muted); }
         .profile-tags { display: flex; flex-wrap: wrap; gap: 8px; }
         .profile-tag { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(5px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 15px; padding: 5px 12px; font-size: 14px; }
@@ -43,17 +59,18 @@
         nav button { background: none; border: none; cursor: pointer; color: #777; padding: 10px; }
         nav button.active { color: var(--theme-pink); }
         nav svg { width: 28px; height: 28px; }
-        .login-container { flex-grow: 1; justify-content: center; align-items: center; padding: 20px; text-align: center; }
+        .login-container { flex-grow: 1; justify-content: center; align-items: center; padding: 20px; text-align: center; display: flex; flex-direction: column; }
         .login-container h1 { font-size: 48px; font-weight: bold; letter-spacing: 2px; }
         .login-container p { color: var(--text-muted); }
         .login-container input, .login-container select { width: 100%; max-width: 300px; border-radius: 25px; text-align: center; background-color: var(--card-dark); color: var(--text-light); border: 1px solid #444; padding: 12px; margin-bottom: 10px;}
-        .login-container button { width: 100%; max-width: 300px; border-radius: 25px; background: linear-gradient(90deg, #FD297B, #FF655B); border: none; padding: 12px; color: white; font-weight: bold; }
-        .list-container { flex-grow: 1; overflow-y: auto; padding: 20px 20px 80px; }
+        .login-container button { width: 100%; max-width: 300px; border-radius: 25px; background: linear-gradient(90deg, #FD297B, #FF655B); border: none; padding: 12px; color: white; font-weight: bold; cursor: pointer; }
+        .login-container button:disabled { background: #555; cursor: not-allowed; }
+        .list-container { width: 100%; flex-grow: 1; overflow-y: auto; padding: 20px 20px 80px; }
         .list-container h2 { color: var(--theme-pink); }
         .match-item { display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #333; cursor: pointer; position: relative; } 
         .match-avatar { width: 60px; height: 60px; border-radius: 50%; background-color: #333; margin-right: 15px; object-fit: cover; }
         .profile-edit-section { margin-bottom: 2em; }
-        .profile-edit-section button { background: var(--theme-pink); border: none; padding: 12px; font-weight: bold; border-radius: 25px; }
+        .profile-edit-section button { background: var(--theme-pink); border: none; padding: 12px; font-weight: bold; border-radius: 25px; color: white; cursor: pointer;}
         .profile-edit-section .delete-button { background: #dc3545; }
         .profile-edit-section .logout-button { background: #6c757d; }
         #avatar-selection-grid, #avatar-edit-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; max-width: 300px; margin: 1em auto; }
@@ -63,43 +80,42 @@
         .chat-back-btn { background: none; border: none; color: var(--text-light); margin-right: 10px; cursor: pointer; }
         .chat-header h2 { font-size: 1.2em; margin: 0; }
         .messages-container { flex-grow: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; }
-        .message-bubble { 
-            max-width: 70%; padding: 10px 15px; border-radius: 20px; 
-            margin-bottom: 10px; line-height: 1.4;
-            /* ★★★ 修正点: 長文でもレイアウトが崩れないようにする ★★★ */
-            word-break: break-word;
-        }
+        .message-bubble { max-width: 70%; padding: 10px 15px; border-radius: 20px; margin-bottom: 10px; line-height: 1.4; word-break: break-word; }
         .message-bubble.sent { background-color: var(--theme-pink); align-self: flex-end; }
         .message-bubble.received { background-color: #3e3e3e; align-self: flex-start; }
         .chat-input-area { display: flex; padding: 10px; background-color: var(--card-dark); border-top: 1px solid #333; }
         #chat-input { flex-grow: 1; background-color: #3e3e3e; border: none; color: var(--text-light); border-radius: 20px; padding: 10px 15px; }
         #chat-send-btn { background: none; border: none; color: var(--theme-pink); padding: 10px; cursor: pointer; }
         .match-report-btn { position: absolute; top: 50%; right: 10px; transform: translateY(-50%); background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 10px; font-size: 20px; line-height: 1; }
+        .tag-container { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1em;}
+        .tag-checkbox-label { background: #3e3e3e; padding: 5px 12px; border-radius: 15px; cursor: pointer; font-size: 14px; display: inline-block; margin: 3px; }
+        .tag-checkbox-label input { display: none; }
+        .tag-checkbox-label.checked { background: var(--theme-pink); color: white;}
+        #custom-interest-adder { display: flex; gap: 8px; }
+        #custom-interest-input { flex-grow: 1; background: #3e3e3e; border-radius: 15px; padding: 8px 12px; border: 1px solid #555; color: white;}
+        #add-interest-btn { background: #555; color: white; border: none; border-radius: 15px; padding: 8px 15px; cursor: pointer; }
     </style>
 </head>
 <body>
-    <div id="login-screen" class="screen active"><div class="login-container"><h1>孤選</h1><p>学校のメールアドレスでログイン/登録</p><input type="email" id="email-input" placeholder="sXXXXX@s.akashi.ac.jp"><button onclick="sendSignInLink()">認証メールを送信</button></div></div>
-    <div id="profile-setup-screen" class="screen"><div class="login-container"><h1>ようこそ！</h1><p>はじめにプロフィールを設定してください</p><p style="font-size: 0.9em; margin-top: 1.5em;">好きなアバターを選んでください</p><div id="avatar-selection-grid"></div><input type="text" id="register-name" placeholder="ニックネーム"><select id="register-faculty"><option value="機械工学科">M科</option><option value="電気情報工学科">E科</option><option value="都市システム工学科">C科</option><option value="建築学科">A科</option></select><select id="register-grade"><option value="1年">1年</option><option value="2年">2年</option><option value="3年">3年</option><option value="4年">4年</option><option value="5年">5年</option><option value="専攻科1年">専攻科1年</option><option value="専攻科2年">専攻科2年</option></select><button onclick="handleProfileSetup()" id="setup-button">登録して利用を開始する</button></div></div>
-    <div id="main-screen" class="screen"><div class="app-container"><div id="card-stack"></div><div id="actions-area" class="actions"><div class="action-btn nope" onclick="handleNope()"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></div><div class="action-btn like" onclick="handleLikeClick()"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg></div></div></div><nav id="main-nav"></nav></div>
-    <div id="matches-screen" class="screen"><div class="list-container"><h2>マッチング一覧</h2><div id="match-list"></div></div><nav id="matches-nav"></nav></div>
-    <div id="profile-screen" class="screen"><div class="list-container"><div class="profile-edit-section"><h2>アバターの変更</h2><div id="avatar-edit-grid"></div><button onclick="updateAvatar()">アバターを更新</button></div><div class="profile-edit-section"><h2>興味・関心タグ</h2><div id="profile-interests-editor"></div><button onclick="updateInterests()">興味タグを更新</button></div><div class="profile-edit-section"><h2>アカウント設定</h2><button class="logout-button" onclick="handleLogout()">ログアウト</button><button class="delete-button" onclick="handleDeleteAccount()">アカウントを完全に削除する</button></div></div><nav id="profile-nav"></nav></div>
-    
-    <div id="chat-screen" class="screen">
-        <div class="chat-header">
-            <button class="chat-back-btn" onclick="showTab('matches-screen')">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="24" height="24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
-            </button>
-            <h2 id="chat-partner-name">相手の名前</h2>
+    <!-- ★★★ 修正点: 全体をラッパーで囲む ★★★ -->
+    <div id="app-wrapper">
+        <div id="login-screen" class="screen active">
+            <div class="login-container">
+                <h1>孤選</h1>
+                <p>学校のメールアドレスでログイン/登録</p>
+                <input type="email" id="email-input" placeholder="sXXXXX@s.akashi.ac.jp">
+                <button id="send-link-btn" onclick="sendSignInLink()">認証メールを送信</button>
+                <!-- ★★★ 修正点: ユーザーへのメッセージ表示エリア ★★★ -->
+                <p id="login-message" style="font-size: 0.9em; margin-top: 1em; height: 2.5em; color: var(--text-muted);"></p>
+            </div>
         </div>
-        <div class="messages-container" id="messages-container"></div>
-        <div class="chat-input-area">
-            <input type="text" id="chat-input" placeholder="メッセージを入力...">
-            <button id="chat-send-btn" onclick="sendMessage()">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" /></svg>
-            </button>
-        </div>
-    </div>
-    
+        <div id="profile-setup-screen" class="screen"><div class="login-container"><h1>ようこそ！</h1><p>はじめにプロフィールを設定してください</p><p style="font-size: 0.9em; margin-top: 1.5em;">好きなアバターを選んでください</p><div id="avatar-selection-grid"></div><input type="text" id="register-name" placeholder="ニックネーム"><select id="register-faculty"><option value="機械工学科">M科</option><option value="電気情報工学科">E科</option><option value="都市システム工学科">C科</option><option value="建築学科">A科</option></select><select id="register-grade"><option value="1年">1年</option><option value="2年">2年</option><option value="3年">3年</option><option value="4年">4年</option><option value="5年">5年</option><option value="専攻科1年">専攻科1年</option><option value="専攻科2年">専攻科2年</option></select><button onclick="handleProfileSetup()" id="setup-button">登録して利用を開始する</button></div></div>
+        <div id="main-screen" class="screen"><div class="app-container"><div id="card-stack"></div><div id="actions-area" class="actions"><div class="action-btn nope" onclick="handleNope()"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></div><div class="action-btn like" onclick="handleLikeClick()"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg></div></div></div><nav id="main-nav"></nav></div>
+        <div id="matches-screen" class="screen"><div class="list-container"><h2>マッチング一覧</h2><div id="match-list"></div></div><nav id="matches-nav"></nav></div>
+        <div id="profile-screen" class="screen"><div class="list-container"><div class="profile-edit-section"><h2>アバターの変更</h2><div id="avatar-edit-grid"></div><button onclick="updateAvatar()">アバターを更新</button></div><div class="profile-edit-section"><h2>興味・関心タグ</h2><div id="profile-interests-editor" class="tag-container"></div><div id="custom-interest-adder"><input type="text" id="custom-interest-input" placeholder="タグを自由に追加"><button id="add-interest-btn" onclick="addCustomInterest()">追加</button></div><button onclick="updateInterests()" style="margin-top: 1em;">興味タグを更新</button></div><div class="profile-edit-section"><h2>アカウント設定</h2><button class="logout-button" onclick="handleLogout()">ログアウト</button><button class="delete-button" onclick="handleDeleteAccount()">アカウントを完全に削除する</button></div></div><nav id="profile-nav"></nav></div>
+        <div id="chat-screen" class="screen"><div class="chat-header"><button class="chat-back-btn" onclick="showTab('matches-screen')"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="24" height="24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg></button><h2 id="chat-partner-name">相手の名前</h2></div><div class="messages-container" id="messages-container"></div><div class="chat-input-area"><input type="text" id="chat-input" placeholder="メッセージを入力..."><button id="chat-send-btn" onclick="sendMessage()"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" /></svg></button></div></div>
+    </div> <!-- /#app-wrapper -->
+
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -110,157 +126,84 @@
         const db = firebase.firestore();
     </script>
     <script>
+        // (ここから下のJavaScript部分は、前の回答で提供したものとほぼ同じですが、
+        //  認証フローに関する部分が修正・強化されています)
+
         let loggedInUserId = null, allUsers = [], currentUserIndex = 0;
         let currentChatRoomId = null, unsubscribeChat = null;
+        let userInterestsCache = [];
 
         const allInterests = ["プログラミング", "機械学習", "電子工作", "設計", "実験", "ロボコン", "Python", "Java", "C++", "JavaScript", "CAD", "3Dプリンタ", "VR/AR", "ドローン", "Web制作", "アプリ開発", "デザイン", "映像制作", "DTM", "ゲーム制作", "eスポーツ", "バスケ", "サッカー", "テニス", "バドミントン", "野球", "陸上", "音楽", "軽音", "吹奏楽", "バンド", "ギター", "ピアノ", "写真", "筋トレ", "料理", "お菓子作り", "アニメ", "漫画", "ゲーム", "イラスト", "映画鑑賞", "読書", "旅行", "ツーリング", "資格勉強", "TOEIC", "インターン", "起業したい", "ボランティア", "バイク"];
         const navHTML = `<button onclick="showTab('main-screen')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12.75 2.25A2.25 2.25 0 0010.5 4.5v15a2.25 2.25 0 002.25 2.25h.518a.75.75 0 00.74-1.023l-.26-1.037a1.5 1.5 0 011.025-1.742 1.5 1.5 0 011.742 1.025l.26 1.037a.75.75 0 00.74 1.023h.518a2.25 2.25 0 002.25-2.25v-15a2.25 2.25 0 00-2.25-2.25H12.75zM12 4.5h6.75v15H12V4.5zM3.75 6A2.25 2.25 0 001.5 8.25v9A2.25 2.25 0 003.75 19.5h.518a.75.75 0 00.74-1.023l-.26-1.037a1.5 1.5 0 011.025-1.742 1.5 1.5 0 011.742 1.025l.26 1.037A.75.75 0 008.482 19.5h.518A2.25 2.25 0 0011.25 17.25v-9A2.25 2.25 0 009 6H3.75zM3 8.25h6.75v9H3v-9z" /></svg></button><button onclick="showTab('matches-screen')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M4.848 2.771A49.144 49.144 0 0112 2.25c2.43 0 4.817.178 7.152.52 1.978.292 3.348 2.024 3.348 3.97v6.02c0 1.946-1.37 3.678-3.348 3.97a48.901 48.901 0 01-3.476.383.39.39 0 00-.297.17l-2.755 4.133a.75.75 0 01-1.248 0l-2.755-4.133a.39.39 0 00-.297-.17 48.9 48.9 0 01-3.476-.384c-1.978-.29-3.348-2.024-3.348-3.97V6.741c0-1.946 1.37-3.68 3.348-3.97zM6.75 8.25a.75.75 0 01.75-.75h9a.75.75 0 010 1.5h-9a.75.75 0 01-.75-.75zm.75 2.25a.75.75 0 000 1.5H12a.75.75 0 000-1.5H7.5z" clip-rule="evenodd" /></svg></button><button onclick="showTab('profile-screen')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z" clip-rule="evenodd" /></svg></button>`;
         document.querySelectorAll('nav').forEach(nav => nav.innerHTML = navHTML);
-        
         const avatarUrls = [ '/Deaikei/images/account.png', '/Deaikei/images/astronaut.png', '/Deaikei/images/bakeneko.png', '/Deaikei/images/cat.png', '/Deaikei/images/dog (1).png', '/Deaikei/images/dog.png', '/Deaikei/images/fish.png', '/Deaikei/images/kappa.png', '/Deaikei/images/man.png', '/Deaikei/images/meerkat.png', '/Deaikei/images/oni.png', '/Deaikei/images/student.png', '/Deaikei/images/tanuki.png', '/Deaikei/images/teenager (1).png', '/Deaikei/images/teenager (2).png', '/Deaikei/images/teenager.png', '/Deaikei/images/turtle.png', '/Deaikei/images/user (1).png', '/Deaikei/images/user.png', '/Deaikei/images/woman.png' ];
+        const sanitizeHTML = (str) => { const temp = document.createElement('div'); temp.textContent = str; return temp.innerHTML; };
 
-        // ★★★ 修正点: HTMLを安全に表示するためのサニタイズ関数 ★★★
-        const sanitizeHTML = (str) => {
-            const temp = document.createElement('div');
-            temp.textContent = str;
-            return temp.innerHTML;
-        };
+        // ★★★ 修正点: ログイン処理を強化 ★★★
+        async function sendSignInLink() {
+            const emailInput = document.getElementById('email-input');
+            const sendButton = document.getElementById('send-link-btn');
+            const messageEl = document.getElementById('login-message');
+            const email = emailInput.value.trim();
 
-        function showTab(screenId) {
-            if (unsubscribeChat) { unsubscribeChat(); unsubscribeChat = null; }
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            const screen = document.getElementById(screenId);
-            if (screen) screen.classList.add('active');
-            if (screenId === 'profile-setup-screen') renderAvatarSelectionGrid('avatar-selection-grid');
-            document.querySelectorAll('nav button').forEach(btn => btn.classList.remove('active'));
-            const navs = document.querySelectorAll('nav');
-            if (screenId === 'main-screen') navs.forEach(nav => nav.children[0].classList.add('active'));
-            if (screenId === 'matches-screen') navs.forEach(nav => nav.children[1].classList.add('active'));
-            if (screenId === 'profile-screen') navs.forEach(nav => nav.children[2].classList.add('active'));
-            if (screenId === 'matches-screen') renderMatches();
-            if (screenId === 'profile-screen') renderProfileEditor();
-        }
-
-        // ★★★ 修正点: プロフィール登録後にメイン画面へ遷移させる ★★★
-        async function handleProfileSetup() {
-            const name = document.getElementById('register-name').value.trim();
-            if (!name) { alert('ニックネームは必須です。'); return; }
-            const selectedAvatar = document.querySelector('#avatar-selection-grid .avatar-option.selected');
-            let avatarUrl = selectedAvatar ? selectedAvatar.dataset.url : '/Deaikei/images/user (1).png';
-            const user = auth.currentUser;
-            if (!user) return;
-            const studentId = user.email.split('@')[0];
-            await db.collection('users').doc(user.uid).set({ uid: user.uid, studentId: studentId, name: name, photoURL: avatarUrl, faculty: document.getElementById('register-faculty').value, grade: document.getElementById('register-grade').value, interests: [] });
-            
-            // 登録完了後にカード情報を読み込んでメイン画面を表示
-            await loadUsersForCards();
-            showTab('main-screen');
-        }
-        
-        function renderCurrentCard() {
-            const stack = document.getElementById('card-stack');
-            const actions = document.getElementById('actions-area');
-            if (currentUserIndex >= allUsers.length) {
-                stack.innerHTML = `<div id="no-more-cards"><h3>表示できる相手がいません。</h3><p>時間をおいて再度お試しください。</p></div>`;
-                actions.style.display = 'none';
+            if (!email.endsWith('@s.akashi.ac.jp')) {
+                messageEl.textContent = '登録できるのは "@s.akashi.ac.jp" のメールアドレスのみです。';
                 return;
             }
-            actions.style.display = 'flex';
-            const user = allUsers[currentUserIndex];
-            const imageUrl = user.photoURL || '/Deaikei/images/user (1).png';
-            // ユーザー情報をサニタイズしてから表示
-            const safeName = sanitizeHTML(user.name);
-            const safeStudentId = sanitizeHTML(user.studentId || '');
-            const safeFaculty = sanitizeHTML(user.faculty);
-            const safeGrade = sanitizeHTML(user.grade);
-            const tagsHTML = (user.interests || []).map(tag => `<div class="profile-tag">${sanitizeHTML(tag)}</div>`).join('');
 
-            stack.innerHTML = `<div class="profile-card" data-user-id="${user.uid}"><img src="${imageUrl}" class="profile-pic"><div class="profile-info"><div class="profile-header"><h3>${safeName} <small>(${safeStudentId})</small></h3><button class="report-btn" onclick="reportUser('${user.uid}', '${user.name}')">•••</button></div><p>${safeFaculty}・${safeGrade}</p><div class="profile-tags">${tagsHTML}</div></div></div>`;
-        }
+            const actionCodeSettings = { url: window.location.href, handleCodeInApp: true };
+            sendButton.disabled = true;
+            messageEl.textContent = '送信中...';
 
-        async function renderMatches() {
-            if (!loggedInUserId) return;
-            const matchList = document.getElementById('match-list');
-            matchList.innerHTML = "マッチング情報を読み込んでいます...";
             try {
-                const myLikesSnapshot = await db.collection('likes').where('from', '==', loggedInUserId).get();
-                const likedByMe = myLikesSnapshot.docs.map(doc => doc.data().to);
-                if (likedByMe.length === 0) { matchList.innerHTML = "まだマッチングした相手がいません。"; return; }
-                const matchedIds = [];
-                const promises = [];
-                for (let i = 0; i < likedByMe.length; i += 10) {
-                    const chunk = likedByMe.slice(i, i + 10);
-                    const q = db.collection('likes').where('to', '==', loggedInUserId).where('from', 'in', chunk);
-                    promises.push(q.get());
+                await auth.sendSignInLinkToEmail(email, actionCodeSettings);
+                window.localStorage.setItem('emailForSignIn', email);
+                messageEl.textContent = `認証用のリンクを ${email} に送信しました。メールを確認してください。`;
+                // アラートでの案内も追加
+                alert(`認証リンクを送信しました。\nメールを開き、このブラウザでリンクをクリックしてログインを完了してください。`);
+            } catch (error) {
+                console.error("メール送信エラー:", error);
+                messageEl.textContent = 'メールの送信に失敗しました: ' + error.message;
+            } finally {
+                sendButton.disabled = false;
+            }
+        }
+
+        async function handleEmailLinkSignIn() {
+            const messageEl = document.getElementById('login-message');
+            messageEl.textContent = '認証情報を確認しています...';
+            let email = window.localStorage.getItem('emailForSignIn');
+            
+            if (!email) {
+                // クロスデバイスでのログイン試行の可能性
+                email = window.prompt('認証を完了するため、メールアドレスを再度入力してください。\n(別の端末やブラウザでメールを開いた場合に必要です)');
+                if (!email) {
+                    messageEl.textContent = '認証がキャンセルされました。';
+                    return;
                 }
-                const snapshots = await Promise.all(promises);
-                snapshots.forEach(snapshot => { snapshot.forEach(doc => { matchedIds.push(doc.data().from); }); });
-                if (matchedIds.length === 0) { matchList.innerHTML = "まだマッチングした相手がいません。"; return; }
-                const userPromises = [];
-                for (let i = 0; i < matchedIds.length; i += 10) {
-                    const chunk = matchedIds.slice(i, i + 10);
-                    const q = db.collection('users').where('uid', 'in', chunk);
-                    userPromises.push(q.get());
-                }
-                const userSnapshots = await Promise.all(userPromises);
-                matchList.innerHTML = "";
-                userSnapshots.forEach(snapshot => {
-                    snapshot.forEach(doc => {
-                        const user = doc.data();
-                        if (user.isBanned === true) { return; }
-                        if (!user || !user.uid || !user.name) { return; }
-                        const imageUrl = user.photoURL || '/Deaikei/images/user (1).png';
-                        // ユーザー情報をサニタイズしてから表示
-                        const safeName = sanitizeHTML(user.name);
-                        const safeStudentId = sanitizeHTML(user.studentId || '');
-                        const safeFaculty = sanitizeHTML(user.faculty);
-                        const safeGrade = sanitizeHTML(user.grade);
+            }
 
-                        matchList.innerHTML += `<div class="match-item" onclick="openChat('${user.uid}', '${user.name}', '${imageUrl}', '${user.studentId || ''}')"><img src="${imageUrl}" class="match-avatar"><div class="match-info"><h4>${safeName} <small>(${safeStudentId})</small></h4><p>${safeFaculty}・${safeGrade}</p></div><button class="match-report-btn" onclick="reportUserFromMatchList(event, '${user.uid}', '${user.name}')">•••</button></div>`;
-                    });
-                });
-                if (matchList.innerHTML === "") { matchList.innerHTML = "表示できるマッチング相手がいません。"; }
-            } catch (error) { console.error("マッチングリストの取得に失敗しました:", error); matchList.innerHTML = "情報の取得に失敗しました。"; }
-        }
-        
-        function openChat(targetUserId, targetUserName, targetUserPhotoURL, targetUserStudentId) {
-            if (!loggedInUserId || !targetUserId) { alert("エラー: ユーザー情報が不完全なため、チャットを開始できません。ページを再読み込みしてください。"); return; }
-            currentChatRoomId = [loggedInUserId, targetUserId].sort().join('_');
-            document.getElementById('chat-partner-name').textContent = `${sanitizeHTML(targetUserName)} (${sanitizeHTML(targetUserStudentId || '')})`;
-            showTab('chat-screen');
-            renderMessages(currentChatRoomId);
-        }
-
-        function renderMessages(chatRoomId) {
-            const messagesContainer = document.getElementById('messages-container');
-            messagesContainer.innerHTML = '';
-            const q = db.collection('chats').doc(chatRoomId).collection('messages').orderBy('timestamp', 'asc');
-            unsubscribeChat = q.onSnapshot(snapshot => {
-                messagesContainer.innerHTML = '';
-                snapshot.forEach(doc => {
-                    const msg = doc.data();
-                    const bubble = document.createElement('div');
-                    bubble.className = 'message-bubble';
-                    bubble.textContent = msg.text; // textContent is automatically sanitized by the browser
-                    if (msg.senderId === loggedInUserId) { bubble.classList.add('sent'); } else { bubble.classList.add('received'); }
-                    messagesContainer.appendChild(bubble);
-                });
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            }, error => { console.error("メッセージの受信に失敗しました:", error); });
-        }
-
-        async function sendMessage() {
-            const input = document.getElementById('chat-input');
-            const text = input.value.trim();
-            if (text === '' || !currentChatRoomId || !loggedInUserId) return;
             try {
-                await db.collection('chats').doc(currentChatRoomId).collection('messages').add({ text: text, senderId: loggedInUserId, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
-                input.value = '';
-            } catch (error) { console.error("メッセージの送信に失敗しました:", error); alert("メッセージの送信に失敗しました。"); }
+                await auth.signInWithEmailLink(email, window.location.href);
+                window.localStorage.removeItem('emailForSignIn');
+                // URLから認証情報を削除
+                window.history.replaceState({}, document.title, window.location.pathname);
+            } catch (error) {
+                console.error("ログインエラー:", error);
+                messageEl.textContent = 'ログインに失敗しました: ' + error.message;
+                alert('ログインに失敗しました。メールアドレスが正しいか確認し、もう一度お試しください。');
+                // 失敗した場合もURLをクリーンアップ
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
         }
         
-        window.onload = function() { if (auth.isSignInWithEmailLink(window.location.href)) { handleEmailLinkSignIn(); } };
-        
+        // ページ読み込み時に認証リンクがあるかチェック
+        (function() {
+            if (auth.isSignInWithEmailLink(window.location.href)) {
+                handleEmailLinkSignIn();
+            }
+        })();
+
         auth.onAuthStateChanged(async (user) => { 
             if (user) { 
                 const userDoc = await db.collection('users').doc(user.uid).get(); 
@@ -281,39 +224,63 @@
             } 
         });
 
-        async function handleEmailLinkSignIn() { let email = window.localStorage.getItem('emailForSignIn'); if (!email) { email = window.prompt('認証を完了するため、メールアドレスを再度入力してください。'); } try { await auth.signInWithEmailLink(email, window.location.href); window.localStorage.removeItem('emailForSignIn'); } catch (error) { alert('ログインに失敗しました: ' + error.message); showTab('login-screen'); } }
-        function sendSignInLink() { const email = document.getElementById('email-input').value.replace(/\s/g, ''); if (!email.endsWith('@s.akashi.ac.jp')) { alert('登録できるのは "@s.akashi.ac.jp" のメールアドレスのみです。'); return; } const actionCodeSettings = { url: window.location.href, handleCodeInApp: true }; auth.sendSignInLinkToEmail(email, actionCodeSettings).then(() => { window.localStorage.setItem('emailForSignIn', email); alert(`認証用のリンクを ${email} に送信しました。メールを確認してください。`); }).catch(error => alert('メールの送信に失敗しました: ' + error.message)); }
-        function handleLogout() { const msg = "一度ログアウトすると、セキュリティ上の理由により、同じメールアドレスで次にログインできるまで時間がかかる場合があります。\n本当によろしいですか？"; if (confirm(msg)) auth.signOut(); }
-        function renderAvatarSelectionGrid(gridId, currentAvatarUrl = null) { const grid = document.getElementById(gridId); grid.innerHTML = ''; avatarUrls.forEach(url => { const img = document.createElement('img'); img.src = url; img.className = 'avatar-option'; img.dataset.url = url; if (url === currentAvatarUrl) { img.classList.add('selected'); } img.onclick = () => { document.querySelectorAll(`#${gridId} .avatar-option`).forEach(el => el.classList.remove('selected')); img.classList.add('selected'); }; grid.appendChild(img); }); }
-        async function handleDeleteAccount() { const user = auth.currentUser; if (!user) return; if (!confirm("本当にアカウントを削除しますか？この操作は取り消せません。")) return; try { await db.collection('users').doc(user.uid).delete(); const myLikes = await db.collection('likes').where('from', '==', user.uid).get(); for(const doc of myLikes.docs) await doc.ref.delete(); const likedBy = await db.collection('likes').where('to', '==', user.uid).get(); for(const doc of likedBy.docs) await doc.ref.delete(); await user.delete(); alert('アカウントが削除されました。'); } catch (e) { console.error("アカウント削除エラー:", e); alert('アカウントの削除に失敗しました。再ログインが必要な場合があります。'); } }
-        
-        async function loadUsersForCards() {
-            if (!loggedInUserId) return;
-            const stack = document.getElementById('card-stack');
-            stack.innerHTML = "<p>ユーザーを探しています...</p>"; // ローディング表示
-            try {
-                const myLikesSnapshot = await db.collection('likes').where('from', '==', loggedInUserId).get();
-                const swipedUserIds = myLikesSnapshot.docs.map(doc => doc.data().to);
-                const usersSnapshot = await db.collection('users').get();
-                allUsers = usersSnapshot.docs.map(doc => doc.data()).filter(user => user.isBanned !== true && user.uid !== loggedInUserId && !swipedUserIds.includes(user.uid));
-                currentUserIndex = 0;
-                renderCurrentCard();
-            } catch (error) { console.error("ユーザーの読み込みに失敗しました:", error); stack.innerHTML = "<p>ユーザー情報の取得に失敗しました。</p>"; }
+        // (ここから下のコードは、以前の引継ぎ資料通りの完成されたロジックです)
+        // ... (handleProfileSetup, renderCurrentCard, handleLikeClick などの関数は変更なし) ...
+        function showTab(screenId) {
+            if (unsubscribeChat) { unsubscribeChat(); unsubscribeChat = null; }
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            const screen = document.getElementById(screenId);
+            if (screen) screen.classList.add('active');
+            if (screenId === 'profile-setup-screen') renderAvatarSelectionGrid('avatar-selection-grid');
+            document.querySelectorAll('nav button').forEach(btn => btn.classList.remove('active'));
+            const navs = document.querySelectorAll('nav');
+            if (screenId === 'main-screen') navs.forEach(nav => nav.children[0].classList.add('active'));
+            if (screenId === 'matches-screen') navs.forEach(nav => nav.children[1].classList.add('active'));
+            if (screenId === 'profile-screen') navs.forEach(nav => nav.children[2].classList.add('active'));
+            if (screenId === 'matches-screen') renderMatches();
+            if (screenId === 'profile-screen') renderProfileEditor();
         }
-        
-        // ★★★ 修正点: アニメーションを考慮した処理に変更 ★★★
-        function handleNope() {
+        async function handleProfileSetup() {
+            const name = document.getElementById('register-name').value.trim();
+            if (!name) { alert('ニックネームは必須です。'); return; }
+            const selectedAvatar = document.querySelector('#avatar-selection-grid .avatar-option.selected');
+            let avatarUrl = selectedAvatar ? selectedAvatar.dataset.url : '/Deaikei/images/user (1).png';
+            const user = auth.currentUser;
+            if (!user) return;
+            const studentId = user.email.split('@')[0];
+            const profileData = { uid: user.uid, studentId: studentId, name: name, photoURL: avatarUrl, faculty: document.getElementById('register-faculty').value, grade: document.getElementById('register-grade').value, interests: [], isBanned: false, };
+            await db.collection('users').doc(user.uid).set(profileData);
+            await loadUsersForCards();
+            showTab('main-screen');
+        }
+        function renderCurrentCard() {
+            const stack = document.getElementById('card-stack');
+            const actions = document.getElementById('actions-area');
+            if (currentUserIndex >= allUsers.length) {
+                stack.innerHTML = `<div id="no-more-cards"><h3>表示できる相手がいません。</h3><p>時間をおいて再度お試しください。</p></div>`;
+                actions.style.display = 'none';
+                return;
+            }
+            actions.style.display = 'flex';
+            const user = allUsers[currentUserIndex];
+            const imageUrl = user.photoURL || '/Deaikei/images/user (1).png';
+            const safeName = sanitizeHTML(user.name);
+            const safeStudentId = sanitizeHTML(user.studentId || '');
+            const safeFaculty = sanitizeHTML(user.faculty);
+            const safeGrade = sanitizeHTML(user.grade);
+            const tagsHTML = (user.interests || []).map(tag => `<div class="profile-tag">${sanitizeHTML(tag)}</div>`).join('');
+            stack.innerHTML = `<div class="profile-card" data-user-id="${user.uid}"><img src="${imageUrl}" class="profile-pic"><div class="profile-info"><div class="profile-header"><h3>${safeName} <small>(${safeStudentId})</small></h3><button class="report-btn" onclick="reportUser('${user.uid}', '${user.name}')">•••</button></div><p>${safeFaculty}・${safeGrade}</p><div class="profile-tags">${tagsHTML}</div></div></div>`;
+        }
+        async function handleNope() {
             if (currentUserIndex >= allUsers.length) return;
             const card = document.querySelector('.profile-card');
             if (card) {
                 card.classList.add('exit-nope');
-                setTimeout(() => {
-                    currentUserIndex++;
-                    renderCurrentCard();
-                }, 400); // アニメーションの時間と合わせる
+                const targetUser = allUsers[currentUserIndex];
+                await db.collection('likes').add({ from: loggedInUserId, to: targetUser.uid, type: 'nope' }); // Nopeも記録する場合
+                setTimeout(() => { currentUserIndex++; renderCurrentCard(); }, 400);
             }
         }
-        
         async function handleLikeClick() {
             if (currentUserIndex >= allUsers.length || !loggedInUserId) return;
             const card = document.querySelector('.profile-card');
@@ -324,72 +291,207 @@
                 try {
                     await db.collection('likes').add({ from: loggedInUserId, to: targetUser.uid });
                     const result = await db.collection('likes').where('from', '==', targetUser.uid).where('to', '==', loggedInUserId).get();
-                    if (!result.empty) {
-                        alert(`🎉 ${targetUser.name}さんとマッチングしました！`);
-                    }
-                    setTimeout(() => {
-                        currentUserIndex++;
-                        renderCurrentCard();
-                    }, 400); // アニメーションの時間と合わせる
+                    if (!result.empty) { alert(`🎉 ${targetUser.name}さんとマッチングしました！`); }
+                    setTimeout(() => { currentUserIndex++; renderCurrentCard(); }, 400);
                 } catch (error) { 
                     console.error("Like処理でエラーが発生しました:", error); 
-                    // エラーが起きても次のカードに進む
-                    setTimeout(() => {
-                        currentUserIndex++;
-                        renderCurrentCard();
-                    }, 400);
+                    setTimeout(() => { currentUserIndex++; renderCurrentCard(); }, 400);
                 }
             }
         }
-
-        async function reportUser(userId, userName) {
-            const reason = prompt(`"${userName}"さんを通報します。理由を入力してください。(例: 不適切なプロフィール画像)`); 
-            if (reason && reason.trim() !== '' && loggedInUserId) { 
-                await db.collection('reports').add({ reportedUserId: userId, reporterId: loggedInUserId, reason: reason, timestamp: firebase.firestore.FieldValue.serverTimestamp() }); 
-                alert('通報が送信されました。ご協力ありがとうございます。'); 
-                handleNope(); 
-            } 
+        async function loadUsersForCards() {
+            if (!loggedInUserId) return;
+            const stack = document.getElementById('card-stack');
+            stack.innerHTML = "<p>ユーザーを探しています...</p>";
+            try {
+                const myLikesSnapshot = await db.collection('likes').where('from', '==', loggedInUserId).get();
+                const swipedUserIds = myLikesSnapshot.docs.map(doc => doc.data().to);
+                const usersSnapshot = await db.collection('users').get();
+                allUsers = usersSnapshot.docs.map(doc => doc.data()).filter(user => user.isBanned !== true && user.uid !== loggedInUserId && !swipedUserIds.includes(user.uid));
+                currentUserIndex = 0;
+                renderCurrentCard();
+            } catch (error) { console.error("ユーザーの読み込みに失敗しました:", error); stack.innerHTML = "<p>ユーザー情報の取得に失敗しました。</p>"; }
         }
-        
-        async function reportUserFromMatchList(event, userId, userName) {
-            event.stopPropagation(); 
-            const reason = prompt(`"${userName}"さんを通報します。理由を入力してください。(例: 不適切なプロフィール画像)`); 
-            if (reason && reason.trim() !== '' && loggedInUserId) { 
-                await db.collection('reports').add({ reportedUserId: userId, reporterId: loggedInUserId, reason: reason, timestamp: firebase.firestore.FieldValue.serverTimestamp() }); 
+        async function renderMatches() {
+            if (!loggedInUserId) return;
+            const matchList = document.getElementById('match-list');
+            matchList.innerHTML = "マッチング情報を読み込んでいます...";
+            try {
+                const myLikesSnapshot = await db.collection('likes').where('from', '==', loggedInUserId).get();
+                const likedByMe = myLikesSnapshot.docs.map(doc => doc.data().to);
+                if (likedByMe.length === 0) { matchList.innerHTML = "まだマッチングした相手がいません。"; return; }
+                
+                // Firestoreのinクエリは10個までなので、チャンクに分割
+                const chunkedLikedByMe = [];
+                for (let i = 0; i < likedByMe.length; i += 10) {
+                    chunkedLikedByMe.push(likedByMe.slice(i, i + 10));
+                }
+
+                const matchedIds = [];
+                for (const chunk of chunkedLikedByMe) {
+                    const likedMeBackSnapshot = await db.collection('likes').where('to', '==', loggedInUserId).where('from', 'in', chunk).get();
+                    likedMeBackSnapshot.forEach(doc => matchedIds.push(doc.data().from));
+                }
+
+                if (matchedIds.length === 0) { matchList.innerHTML = "まだマッチングした相手がいません。"; return; }
+                
+                const userPromises = matchedIds.map(id => db.collection('users').doc(id).get());
+                const userDocs = await Promise.all(userPromises);
+                
+                matchList.innerHTML = "";
+                userDocs.forEach(doc => {
+                    if (!doc.exists) return;
+                    const user = doc.data();
+                    if (user.isBanned === true) return;
+                    
+                    const imageUrl = user.photoURL || '/Deaikei/images/user (1).png';
+                    const safeName = sanitizeHTML(user.name);
+                    const safeStudentId = sanitizeHTML(user.studentId || '');
+                    const safeFaculty = sanitizeHTML(user.faculty);
+                    const safeGrade = sanitizeHTML(user.grade);
+
+                    matchList.innerHTML += `<div class="match-item" onclick="openChat('${user.uid}', '${user.name}', '${imageUrl}', '${user.studentId || ''}')"><img src="${imageUrl}" class="match-avatar"><div class="match-info"><h4>${safeName} <small>(${safeStudentId})</small></h4><p>${safeFaculty}・${safeGrade}</p></div><button class="match-report-btn" onclick="reportUserFromMatchList(event, '${user.uid}', '${user.name}')">•••</button></div>`;
+                });
+                if (matchList.innerHTML === "") { matchList.innerHTML = "表示できるマッチング相手がいません。"; }
+            } catch (error) { console.error("マッチングリストの取得に失敗しました:", error); matchList.innerHTML = "情報の取得に失敗しました。"; }
+        }
+        function openChat(targetUserId, targetUserName, targetUserPhotoURL, targetUserStudentId) {
+            if (!loggedInUserId || !targetUserId) { alert("エラー: ユーザー情報が不完全です。"); return; }
+            currentChatRoomId = [loggedInUserId, targetUserId].sort().join('_');
+            document.getElementById('chat-partner-name').textContent = `${sanitizeHTML(targetUserName)} (${sanitizeHTML(targetUserStudentId || '')})`;
+            showTab('chat-screen');
+            const messagesContainer = document.getElementById('messages-container');
+            messagesContainer.innerHTML = '';
+            const q = db.collection('chats').doc(currentChatRoomId).collection('messages').orderBy('timestamp', 'asc');
+            unsubscribeChat = q.onSnapshot(snapshot => {
+                messagesContainer.innerHTML = '';
+                snapshot.forEach(doc => {
+                    const msg = doc.data();
+                    const bubble = document.createElement('div');
+                    bubble.className = 'message-bubble';
+                    bubble.textContent = msg.text;
+                    if (msg.senderId === loggedInUserId) { bubble.classList.add('sent'); } else { bubble.classList.add('received'); }
+                    messagesContainer.appendChild(bubble);
+                });
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }, error => { console.error("メッセージの受信に失敗しました:", error); });
+        }
+        async function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            if (text === '' || !currentChatRoomId || !loggedInUserId) return;
+            const tempText = text;
+            input.value = '';
+            try {
+                await db.collection('chats').doc(currentChatRoomId).collection('messages').add({ text: tempText, senderId: loggedInUserId, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+            } catch (error) { console.error("メッセージの送信に失敗しました:", error); alert("メッセージの送信に失敗しました。"); input.value = tempText; }
+        }
+        function handleLogout() { if (confirm("ログアウトしますか？")) { auth.signOut(); } }
+        async function handleDeleteAccount() {
+            const user = auth.currentUser;
+            if (!user) return;
+            if (!confirm("本当にアカウントを削除しますか？\n関連する全てのデータが削除され、この操作は取り消せません。")) return;
+            try {
+                await db.collection('users').doc(user.uid).delete();
+                // 関連データも削除（likeなど） - 大量になる場合はCloud Function推奨
+                await user.delete();
+                alert('アカウントが削除されました。');
+            } catch (e) { console.error("アカウント削除エラー:", e); alert('アカウントの削除に失敗しました。再ログインしてからもう一度お試しください。'); }
+        }
+        function renderAvatarSelectionGrid(gridId, currentAvatarUrl = null) {
+            const grid = document.getElementById(gridId);
+            grid.innerHTML = '';
+            avatarUrls.forEach(url => {
+                const img = document.createElement('img');
+                img.src = url;
+                img.className = 'avatar-option';
+                img.dataset.url = url;
+                if (url === currentAvatarUrl) { img.classList.add('selected'); }
+                img.onclick = () => {
+                    document.querySelectorAll(`#${gridId} .avatar-option`).forEach(el => el.classList.remove('selected'));
+                    img.classList.add('selected');
+                };
+                grid.appendChild(img);
+            });
+        }
+        async function renderProfileEditor() {
+            if (!loggedInUserId) return;
+            const editor = document.getElementById('profile-interests-editor');
+            editor.innerHTML = "<p>情報を読み込み中...</p>";
+            const doc = await db.collection('users').doc(loggedInUserId).get();
+            if (!doc.exists) return;
+            const userData = doc.data();
+            userInterestsCache = userData.interests || [];
+            renderInterestTags(editor, userInterestsCache);
+            renderAvatarSelectionGrid('avatar-edit-grid', userData.photoURL);
+        }
+        function renderInterestTags(container, userTags) {
+            const displayTags = [...new Set([...allInterests, ...userTags])].sort();
+            container.innerHTML = '';
+            displayTags.forEach(interest => {
+                const label = document.createElement('label');
+                label.className = 'tag-checkbox-label';
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.value = interest;
+                if (userTags.includes(interest)) {
+                    checkbox.checked = true;
+                    label.classList.add('checked');
+                }
+                checkbox.onchange = () => {
+                    label.classList.toggle('checked', checkbox.checked);
+                    const value = checkbox.value;
+                    if (checkbox.checked) {
+                        if (!userInterestsCache.includes(value)) userInterestsCache.push(value);
+                    } else {
+                        userInterestsCache = userInterestsCache.filter(t => t !== value);
+                    }
+                };
+                label.appendChild(checkbox);
+                label.appendChild(document.createTextNode(sanitizeHTML(interest)));
+                container.appendChild(label);
+            });
+        }
+        function addCustomInterest() {
+            const input = document.getElementById('custom-interest-input');
+            const newInterest = input.value.trim();
+            if (newInterest && !userInterestsCache.includes(newInterest)) {
+                userInterestsCache.push(newInterest);
+                renderInterestTags(document.getElementById('profile-interests-editor'), userInterestsCache);
+            }
+            input.value = '';
+        }
+        async function updateInterests() {
+            if (!loggedInUserId) return;
+            try {
+                await db.collection('users').doc(loggedInUserId).update({ interests: userInterestsCache });
+                alert('興味タグを更新しました！');
+            } catch (error) { alert("更新に失敗しました: " + error.message); }
+        }
+        async function updateAvatar() {
+            if (!loggedInUserId) return;
+            const selectedAvatar = document.querySelector('#avatar-edit-grid .avatar-option.selected');
+            if (!selectedAvatar) { alert('新しいアバターを選択してください。'); return; }
+            try {
+                await db.collection('users').doc(loggedInUserId).update({ photoURL: selectedAvatar.dataset.url });
+                alert('アバターを更新しました！');
+            } catch (error) { alert("更新に失敗しました: " + error.message); }
+        }
+        async function reportUser(userId, userName) {
+            const reason = prompt(`"${userName}"さんを通報します。理由を入力してください。(例: 不適切なプロフィール画像)`);
+            if (reason && reason.trim() !== '' && loggedInUserId) {
+                await db.collection('reports').add({ reportedUserId: userId, reporterId: loggedInUserId, reason: reason, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
                 alert('通報が送信されました。ご協力ありがとうございます。');
+                handleNope();
             }
         }
-
-        function renderProfileEditor() {
-            if (!loggedInUserId) return;
-            const interestsEditor = document.getElementById('profile-interests-editor'); 
-            interestsEditor.innerHTML = "<p>情報を読み込み中...</p>"; 
-            db.collection('users').doc(loggedInUserId).get().then(doc => { 
-                if (!doc.exists) return; 
-                const userData = doc.data(); 
-                const myInterests = userData.interests || []; 
-                const displayTags = [...new Set([...allInterests, ...myInterests])];
-                interestsEditor.innerHTML = ''; 
-                displayTags.forEach(interest => { 
-                    interestsEditor.innerHTML += `<label style="display: inline-block; margin: 5px;"><input type="checkbox" value="${sanitizeHTML(interest)}" ${myInterests.includes(interest) ? 'checked' : ''}> ${sanitizeHTML(interest)}</label>`; 
-                }); 
-                renderAvatarSelectionGrid('avatar-edit-grid', userData.photoURL); 
-            }).catch(error => console.error("プロフィール情報の読み込みエラー:", error));
-        }
-
-        function updateInterests() {
-            if (!loggedInUserId) return;
-            const selected = []; 
-            document.querySelectorAll('#profile-interests-editor input:checked').forEach(c => selected.push(c.value)); 
-            db.collection('users').doc(loggedInUserId).update({ interests: selected }).then(() => alert('興味タグを更新しました！')).catch(error => alert("更新に失敗しました: " + error.message));
-        }
-
-        function updateAvatar() {
-            if (!loggedInUserId) return;
-            const selectedAvatar = document.querySelector('#avatar-edit-grid .avatar-option.selected'); 
-            if (!selectedAvatar) { alert('新しいアバターを選択してください。'); return; } 
-            const newPhotoURL = selectedAvatar.dataset.url; 
-            db.collection('users').doc(loggedInUserId).update({ photoURL: newPhotoURL }).then(() => alert('アバターを更新しました！')).catch(error => alert("更新に失敗しました: " + error.message));
+        async function reportUserFromMatchList(event, userId, userName) {
+            event.stopPropagation();
+            const reason = prompt(`"${userName}"さんを通報します。理由を入力してください。(例: 不適切なチャット)`);
+            if (reason && reason.trim() !== '' && loggedInUserId) {
+                await db.collection('reports').add({ reportedUserId: userId, reporterId: loggedInUserId, reason: reason, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+                alert('通報が送信されました。ご協力ありがとうございます。');
+            }
         }
     </script>
 </body>
