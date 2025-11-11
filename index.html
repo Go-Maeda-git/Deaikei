@@ -48,6 +48,15 @@
         .login-container input, .login-container select { width: 100%; max-width: 300px; border-radius: 25px; text-align: center; background-color: var(--card-dark); color: var(--text-light); border: 1px solid #444; padding: 12px; margin-bottom: 10px;}
         .login-container button { width: 100%; max-width: 300px; border-radius: 25px; background: linear-gradient(90deg, #FD297B, #FF655B); border: none; padding: 12px; color: white; font-weight: bold; cursor: pointer; }
         .login-container button:disabled { background: #555; cursor: not-allowed; }
+
+        /* ▼▼▼ ここに修正を追加 ▼▼▼ */
+        #profile-setup-screen .login-container {
+            justify-content: flex-start; /* コンテンツを中央揃えから上揃えに変更 */
+            overflow-y: auto;           /* 縦方向にスクロールバーを必要に応じて表示 */
+            padding: 40px 20px;         /* 上下の余白を調整して見やすくする */
+        }
+        /* ▲▲▲ ここまで ▲▲▲ */
+
         .list-container { width: 100%; flex-grow: 1; overflow-y: auto; padding: 20px 20px 80px; }
         .list-container h2 { color: var(--theme-pink); }
         .match-item { display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #333; cursor: pointer; position: relative; } 
@@ -180,26 +189,23 @@
         async function handleLikeClick() { if (currentUserIndex >= allUsers.length || !loggedInUserId) return; const targetUser = allUsers[currentUserIndex]; if (!targetUser || !targetUser.uid) { console.error("Invalid target user data. Skipping."); currentUserIndex++; renderCurrentCard(); return; } const card = document.querySelector('.profile-card'); if (card) { card.classList.add('exit-like'); try { await db.collection('likes').add({ from: loggedInUserId, to: targetUser.uid }); const result = await db.collection('likes').where('from', '==', targetUser.uid).where('to', '==', loggedInUserId).get(); if (!result.empty) { alert(`🎉 ${targetUser.name}さんとマッチングしました！`); } setTimeout(() => { currentUserIndex++; renderCurrentCard(); }, 400); } catch (error) { console.error("Like処理エラー:", error); setTimeout(() => { currentUserIndex++; renderCurrentCard(); }, 400); } } }
         
         // =======================================================
-        // ▼▼▼ Snake Game Logic (ここから差し替え) ▼▼▼
+        // ▼▼▼ Snake Game Logic (滑らかに動くよう修正済み) ▼▼▼
         // =======================================================
         const snakeCanvas = document.getElementById('snake-canvas');
         const snakeCtx = snakeCanvas.getContext('2d');
         
-        // --- ゲームループと状態管理の変数を変更 ---
         let animationFrameId;
         let lastLogicUpdateTime = 0;
-        let gameSpeed = 150; // 蛇が1マス進む時間 (ms)
+        let gameSpeed = 150;
 
-        // --- ゲーム設定 ---
         let gridSize = 20;
         let tileCount;
 
-        // --- ゲーム状態 ---
         let snake;
-        let previousSnake; // 補間描画のために前のフレームの蛇の状態を保存
+        let previousSnake;
         let food;
         let score;
-        let dx, dy; // 進行方向
+        let dx, dy;
         let changingDirection;
         let isGameOver;
 
@@ -212,7 +218,6 @@
         }
         window.addEventListener('resize', resizeSnakeCanvas);
 
-        // ゲームの初期化
         function initSnakeGame() {
             resizeSnakeCanvas();
             isGameOver = false;
@@ -224,25 +229,22 @@
                 {x: Math.floor(tileCount / 2) - 1, y: Math.floor(tileCount / 2)},
                 {x: Math.floor(tileCount / 2) - 2, y: Math.floor(tileCount / 2)}
             ];
-            // 補間用に初期状態をコピー
             previousSnake = JSON.parse(JSON.stringify(snake));
             
             score = 0;
-            gameSpeed = 150; // 速度をリセット
-            dx = 1; // 最初は右に移動
+            gameSpeed = 150;
+            dx = 1;
             dy = 0;
             createFood();
-            drawInitialState(); // 初期状態を描画
+            drawInitialState();
         }
 
-        // 開始前の描画用
         function drawInitialState() {
             clearCanvas();
             drawFood();
-            drawSnake(0); // 進捗0で描画
+            drawSnake(0);
         }
         
-        // --- ゲームループを requestAnimationFrame ベースに変更 ---
         function startSnakeGame() {
             if (animationFrameId) cancelAnimationFrame(animationFrameId);
             
@@ -263,7 +265,6 @@
             }
         }
 
-        // 新しいゲームループ
         function gameLoop(currentTime) {
             animationFrameId = requestAnimationFrame(gameLoop);
 
@@ -272,23 +273,19 @@
                 return;
             }
 
-            // ロジックの更新
             const timeSinceLastUpdate = currentTime - lastLogicUpdateTime;
             if (timeSinceLastUpdate > gameSpeed) {
-                // 遅延が蓄積しないように、更新タイミングを調整
                 lastLogicUpdateTime = currentTime - (timeSinceLastUpdate % gameSpeed);
                 
                 changingDirection = false;
-                moveSnake(); // ゲーム状態を更新
+                moveSnake();
             }
 
-            // 毎フレーム描画処理
-            // 次のロジック更新までの進捗率（0.0〜1.0）を計算
             const progress = Math.min((currentTime - lastLogicUpdateTime) / gameSpeed, 1);
             
             clearCanvas();
             drawFood();
-            drawSnake(progress); // 補間しながら描画
+            drawSnake(progress);
         }
 
         function clearCanvas() {
@@ -296,7 +293,6 @@
             snakeCtx.fillRect(0, 0, snakeCanvas.width, snakeCanvas.height);
         }
 
-        // --- 描画関数を補間対応に変更 ---
         function drawSnakePart(interpolatedX, interpolatedY) {
             snakeCtx.fillStyle = '#2DB97B';
             snakeCtx.strokeStyle = '#121212';
@@ -306,14 +302,9 @@
 
         function drawSnake(progress) {
              snake.forEach((part, index) => {
-                // 1フレーム前のパーツの位置を取得
-                // 蛇が伸びた瞬間の新しいパーツは、現在の位置にそのまま描画
                 const prevPart = previousSnake[index] || part;
-
-                // 2つの位置の間を線形補間
                 const interpolatedX = prevPart.x + (part.x - prevPart.x) * progress;
                 const interpolatedY = prevPart.y + (part.y - prevPart.y) * progress;
-
                 drawSnakePart(interpolatedX, interpolatedY);
             });
         }
@@ -325,11 +316,8 @@
             snakeCtx.strokeRect(food.x * gridSize, food.y * gridSize, gridSize, gridSize);
         }
 
-        // --- ロジック関数を更新 ---
         function moveSnake() {
-            // 移動前の状態を保存
             previousSnake = JSON.parse(JSON.stringify(snake));
-
             const head = {x: snake[0].x + dx, y: snake[0].y + dy};
             if (checkGameOver(head)) {
                 isGameOver = true;
@@ -340,7 +328,6 @@
             if (hasEatenFood) {
                 score++;
                 document.getElementById('game-score').textContent = `Score: ${score}`;
-                // スコアに応じてゲーム速度を上げる (最小50ms)
                 gameSpeed = Math.max(50, 150 - score * 3);
                 updateHighScore(score);
                 createFood();
@@ -350,7 +337,6 @@
         }
 
         function checkGameOver(head) {
-            // 自分自身に衝突したかチェック
             for (let i = 1; i < snake.length; i++) { if (head.x === snake[i].x && head.y === snake[i].y) return true; }
             const hitLeftWall = head.x < 0;
             const hitRightWall = head.x >= tileCount;
@@ -392,19 +378,19 @@
             const dxSwipe = touchEndX - touchStartX; const dySwipe = touchEndY - touchStartY;
             if (changingDirection) return;
             const goingUp = dy === -1; const goingDown = dy === 1; const goingRight = dx === 1; const goingLeft = dx === -1;
-            if (Math.abs(dxSwipe) > Math.abs(dySwipe)) { // 水平スワイプ
-                if (dxSwipe > 0 && !goingLeft) { dx = 1; dy = 0; changingDirection = true; } // 右
-                else if (dxSwipe < 0 && !goingRight) { dx = -1; dy = 0; changingDirection = true; } // 左
-            } else { // 垂直スワイプ
-                if (dySwipe > 0 && !goingUp) { dx = 0; dy = 1; changingDirection = true; } // 下
-                else if (dySwipe < 0 && !goingDown) { dx = 0; dy = -1; changingDirection = true; } // 上
+            if (Math.abs(dxSwipe) > Math.abs(dySwipe)) {
+                if (dxSwipe > 0 && !goingLeft) { dx = 1; dy = 0; changingDirection = true; }
+                else if (dxSwipe < 0 && !goingRight) { dx = -1; dy = 0; changingDirection = true; }
+            } else {
+                if (dySwipe > 0 && !goingUp) { dx = 0; dy = 1; changingDirection = true; }
+                else if (dySwipe < 0 && !goingDown) { dx = 0; dy = -1; changingDirection = true; }
             }
         }
         
         async function updateHighScore(score) { if (!loggedInUserId || !score) return; try { const userRef = db.collection('users').doc(loggedInUserId); const doc = await userRef.get(); if (doc.exists) { const currentHighScore = doc.data().pongHighScore || 0; if (score > currentHighScore) { await userRef.update({ pongHighScore: score }); console.log(`ハイスコア更新: ${score}点`); } } } catch(error) { console.error("ハイスコア更新エラー:", error); } }
         
         // =======================================================
-        // ▲▲▲ Snake Game Logic (ここまで差し替え) ▲▲▲
+        // ▲▲▲ Snake Game Logic (ここまで) ▲▲▲
         // =======================================================
         
         async function renderRanking() { const rankingList = document.getElementById('ranking-list'); rankingList.innerHTML = "<p>ランキングを読み込み中...</p>"; try { const snapshot = await db.collection('users').orderBy('pongHighScore', 'desc').limit(50).get(); rankingList.innerHTML = ""; if (snapshot.empty) { rankingList.innerHTML = "<p>まだ誰もプレイしていません。</p>"; return; } let rank = 1; snapshot.forEach(doc => { const user = doc.data(); if (!user.pongHighScore) return; const imageUrl = user.photoURL || '/Deaikei/images/user (1).png'; rankingList.innerHTML += `<div class="ranking-item"><div class="ranking-rank">${rank}</div><img src="${imageUrl}" class="ranking-avatar"><div class="ranking-info"><h4>${sanitizeHTML(user.name)}</h4><p>${sanitizeHTML(user.faculty)}・${sanitizeHTML(user.grade)}</p></div><div class="ranking-score">${user.pongHighScore}</div></div>`; rank++; }); } catch (error) { console.error("ランキング取得エラー:", error); rankingList.innerHTML = "<p>ランキングの取得に失敗しました。</p>"; } }
