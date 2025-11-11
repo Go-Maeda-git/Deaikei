@@ -49,13 +49,11 @@
         .login-container button { width: 100%; max-width: 300px; border-radius: 25px; background: linear-gradient(90deg, #FD297B, #FF655B); border: none; padding: 12px; color: white; font-weight: bold; cursor: pointer; }
         .login-container button:disabled { background: #555; cursor: not-allowed; }
 
-        /* ▼▼▼ ここに修正を追加 ▼▼▼ */
         #profile-setup-screen .login-container {
-            justify-content: flex-start; /* コンテンツを中央揃えから上揃えに変更 */
-            overflow-y: auto;           /* 縦方向にスクロールバーを必要に応じて表示 */
-            padding: 40px 20px;         /* 上下の余白を調整して見やすくする */
+            justify-content: flex-start;
+            overflow-y: auto;
+            padding: 40px 20px;
         }
-        /* ▲▲▲ ここまで ▲▲▲ */
 
         .list-container { width: 100%; flex-grow: 1; overflow-y: auto; padding: 20px 20px 80px; }
         .list-container h2 { color: var(--theme-pink); }
@@ -159,7 +157,33 @@
         const sanitizeHTML = (str) => { const temp = document.createElement('div'); temp.textContent = str; return temp.innerHTML; };
 
         (function() { if (auth.isSignInWithEmailLink(window.location.href)) handleEmailLinkSignIn(); })();
-        auth.onAuthStateChanged(async (user) => { if (user) { const userDoc = await db.collection('users').doc(user.uid).get(); if (userDoc.exists) { const userData = userDoc.data(); if (!userData.studentId && user.email) { await db.collection('users').doc(user.uid).update({ studentId: user.email.split('@')[0] }); } loggedInUserId = user.uid; await loadUsersForCards(); showTab('main-screen'); } else { showTab('profile-setup-screen'); } } else { loggedInUserId = null; allUsers = []; currentUserIndex = 0; showTab('login-screen'); } });
+        
+        // ▼▼▼ ここから修正 ▼▼▼
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                // ログイン状態が確認できたら、まずユーザーIDをセットする
+                loggedInUserId = user.uid; 
+                const userDoc = await db.collection('users').doc(user.uid).get();
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    if (!userData.studentId && user.email) {
+                        await db.collection('users').doc(user.uid).update({ studentId: user.email.split('@')[0] });
+                    }
+                    await loadUsersForCards();
+                    showTab('main-screen');
+                } else {
+                    // プロフィールがまだなくても、ログインはしているので設定画面へ
+                    showTab('profile-setup-screen');
+                }
+            } else {
+                // ログアウトした場合
+                loggedInUserId = null;
+                allUsers = [];
+                currentUserIndex = 0;
+                showTab('login-screen');
+            }
+        });
+        // ▲▲▲ ここまで修正 ▲▲▲
         
         function showTab(screenId) {
             if (unsubscribeChat) { unsubscribeChat(); unsubscribeChat = null; }
@@ -183,8 +207,50 @@
         }
 
         async function handleProfileSetup() { const name = document.getElementById('register-name').value.trim(); if (!name) { alert('ニックネームは必須です。'); return; } const selectedAvatar = document.querySelector('#avatar-selection-grid .avatar-option.selected'); let avatarUrl = selectedAvatar ? selectedAvatar.dataset.url : '/Deaikei/images/user (1).png'; const user = auth.currentUser; if (!user) return; const studentId = user.email.split('@')[0]; const profileData = { uid: user.uid, studentId: studentId, name: name, photoURL: avatarUrl, faculty: document.getElementById('register-faculty').value, grade: document.getElementById('register-grade').value, interests: [], isBanned: false, blockedUsers: [], pongHighScore: 0 }; await db.collection('users').doc(user.uid).set(profileData); await loadUsersForCards(); showTab('main-screen'); }
-        async function loadUsersForCards() { if (!loggedInUserId) return; const stack = document.getElementById('card-stack'); stack.innerHTML = "<p>ユーザーを探しています...</p>"; try { const myDoc = await db.collection('users').doc(loggedInUserId).get(); const myData = myDoc.data() || {}; const myBlockedUsers = myData.blockedUsers || []; const myLikesSnapshot = await db.collection('likes').where('from', '==', loggedInUserId).get(); const swipedUserIds = myLikesSnapshot.docs.map(doc => doc.data().to); swipedUserIds.push(...myBlockedUsers); const usersSnapshot = await db.collection('users').get(); allUsers = usersSnapshot.docs.map(doc => doc.data()).filter(user => user && user.uid && user.uid !== loggedInUserId && !user.isBanned && !swipedUserIds.includes(user.uid) && !(user.blockedUsers && user.blockedUsers.includes(loggedInUserId))); currentUserIndex = 0; renderCurrentCard(); } catch (error) { console.error("ユーザー読み込みエラー:", error); stack.innerHTML = "<p>ユーザー情報の取得に失敗しました。</p>"; } }
-        function renderCurrentCard() { const stack = document.getElementById('card-stack'); const actions = document.getElementById('actions-area'); if (currentUserIndex >= allUsers.length) { stack.innerHTML = `<div id="no-more-cards"><h3>表示できる相手がいません。</h3><p>時間をおいて再度お試しください。</p></div>`; actions.style.display = 'none'; return; } actions.style.display = 'flex'; const user = allUsers[currentUserIndex]; const imageUrl = user.photoURL || '/Deaikei/images/user (1).png'; const safeName = sanitizeHTML(user.name); const safeStudentId = sanitizeHTML(user.studentId || ''); const safeFaculty = sanitizeHTML(user.faculty); const safeGrade = sanitizeHTML(user.grade); const tagsHTML = (user.interests || []).map(tag => `<div class="profile-tag">${sanitizeHTML(tag)}</div>`).join(''); let dailyTopicHTML = ''; if (user.dailyAnswer && user.dailyTopicQuestion) { dailyTopicHTML = `<div class="daily-topic-area"><div class="question">${sanitizeHTML(user.dailyTopicQuestion)}</div><div class="answer">${sanitizeHTML(user.dailyAnswer)}</div></div>`; } stack.innerHTML = `<div class="profile-card" data-user-id="${user.uid}"><img src="${imageUrl}" class="profile-pic"><div class="profile-info"><div class="profile-header"><h3>${safeName} <small>(${safeStudentId})</small></h3><button class="user-action-btn" onclick="handleUserAction('${user.uid}', '${user.name}')">•••</button></div><p>${safeFaculty}・${safeGrade}</p><div class="profile-tags">${tagsHTML}</div>${dailyTopicHTML}</div></div>`; }
+        
+        async function loadUsersForCards() {
+            if (!loggedInUserId) return;
+            const stack = document.getElementById('card-stack');
+            stack.innerHTML = `<div id="no-more-cards"><h3>ユーザーを探しています...</h3></div>`; 
+            try {
+                const myDoc = await db.collection('users').doc(loggedInUserId).get();
+                const myData = myDoc.data() || {};
+                const myBlockedUsers = myData.blockedUsers || [];
+                const myLikesSnapshot = await db.collection('likes').where('from', '==', loggedInUserId).get();
+                const swipedUserIds = myLikesSnapshot.docs.map(doc => doc.data().to);
+                swipedUserIds.push(...myBlockedUsers);
+                const usersSnapshot = await db.collection('users').get();
+                allUsers = usersSnapshot.docs.map(doc => doc.data()).filter(user => user && user.uid && user.uid !== loggedInUserId && !user.isBanned && !swipedUserIds.includes(user.uid) && !(user.blockedUsers && user.blockedUsers.includes(loggedInUserId)));
+                currentUserIndex = 0;
+                renderCurrentCard();
+            } catch (error) {
+                console.error("ユーザー読み込みエラー:", error);
+                stack.innerHTML = `<div id="no-more-cards"><h3>エラーが発生しました</h3><p>ユーザー情報の取得に失敗しました。</p></div>`;
+            }
+        }
+        function renderCurrentCard() {
+            const stack = document.getElementById('card-stack');
+            const actions = document.getElementById('actions-area');
+            if (currentUserIndex >= allUsers.length) {
+                stack.innerHTML = `<div id="no-more-cards"><h3>表示できる相手がいません</h3><p>新しいユーザーが参加するまで、<br>しばらくお待ちください。</p></div>`;
+                actions.style.display = 'none';
+                return;
+            }
+            actions.style.display = 'flex';
+            const user = allUsers[currentUserIndex];
+            const imageUrl = user.photoURL || '/Deaikei/images/user (1).png';
+            const safeName = sanitizeHTML(user.name);
+            const safeStudentId = sanitizeHTML(user.studentId || '');
+            const safeFaculty = sanitizeHTML(user.faculty);
+            const safeGrade = sanitizeHTML(user.grade);
+            const tagsHTML = (user.interests || []).map(tag => `<div class="profile-tag">${sanitizeHTML(tag)}</div>`).join('');
+            let dailyTopicHTML = '';
+            if (user.dailyAnswer && user.dailyTopicQuestion) {
+                dailyTopicHTML = `<div class="daily-topic-area"><div class="question">${sanitizeHTML(user.dailyTopicQuestion)}</div><div class="answer">${sanitizeHTML(user.dailyAnswer)}</div></div>`;
+            }
+            stack.innerHTML = `<div class="profile-card" data-user-id="${user.uid}"><img src="${imageUrl}" class="profile-pic"><div class="profile-info"><div class="profile-header"><h3>${safeName} <small>(${safeStudentId})</small></h3><button class="user-action-btn" onclick="handleUserAction('${user.uid}', '${user.name}')">•••</button></div><p>${safeFaculty}・${safeGrade}</p><div class="profile-tags">${tagsHTML}</div>${dailyTopicHTML}</div></div>`;
+        }
+
         async function handleNope() { if (currentUserIndex >= allUsers.length) return; const card = document.querySelector('.profile-card'); if (card) { card.classList.add('exit-nope'); const targetUser = allUsers[currentUserIndex]; if (targetUser && targetUser.uid) { await db.collection('likes').add({ from: loggedInUserId, to: targetUser.uid, type: 'nope' }); } setTimeout(() => { currentUserIndex++; renderCurrentCard(); }, 400); } }
         async function handleLikeClick() { if (currentUserIndex >= allUsers.length || !loggedInUserId) return; const targetUser = allUsers[currentUserIndex]; if (!targetUser || !targetUser.uid) { console.error("Invalid target user data. Skipping."); currentUserIndex++; renderCurrentCard(); return; } const card = document.querySelector('.profile-card'); if (card) { card.classList.add('exit-like'); try { await db.collection('likes').add({ from: loggedInUserId, to: targetUser.uid }); const result = await db.collection('likes').where('from', '==', targetUser.uid).where('to', '==', loggedInUserId).get(); if (!result.empty) { alert(`🎉 ${targetUser.name}さんとマッチングしました！`); } setTimeout(() => { currentUserIndex++; renderCurrentCard(); }, 400); } catch (error) { console.error("Like処理エラー:", error); setTimeout(() => { currentUserIndex++; renderCurrentCard(); }, 400); } } }
         
@@ -193,14 +259,11 @@
         // =======================================================
         const snakeCanvas = document.getElementById('snake-canvas');
         const snakeCtx = snakeCanvas.getContext('2d');
-        
         let animationFrameId;
         let lastLogicUpdateTime = 0;
         let gameSpeed = 150;
-
         let gridSize = 20;
         let tileCount;
-
         let snake;
         let previousSnake;
         let food;
@@ -208,187 +271,29 @@
         let dx, dy;
         let changingDirection;
         let isGameOver;
-
-        function resizeSnakeCanvas() {
-            const container = snakeCanvas.parentElement;
-            const size = Math.min(container.clientWidth * 0.95, 400);
-            tileCount = Math.floor(size / gridSize);
-            snakeCanvas.width = tileCount * gridSize;
-            snakeCanvas.height = tileCount * gridSize;
-        }
+        function resizeSnakeCanvas() { const container = snakeCanvas.parentElement; const size = Math.min(container.clientWidth * 0.95, 400); tileCount = Math.floor(size / gridSize); snakeCanvas.width = tileCount * gridSize; snakeCanvas.height = tileCount * gridSize; }
         window.addEventListener('resize', resizeSnakeCanvas);
-
-        function initSnakeGame() {
-            resizeSnakeCanvas();
-            isGameOver = false;
-            document.getElementById('start-game-btn').style.display = 'block';
-            document.getElementById('game-score').textContent = "Score: 0";
-            
-            snake = [
-                {x: Math.floor(tileCount / 2), y: Math.floor(tileCount / 2)},
-                {x: Math.floor(tileCount / 2) - 1, y: Math.floor(tileCount / 2)},
-                {x: Math.floor(tileCount / 2) - 2, y: Math.floor(tileCount / 2)}
-            ];
-            previousSnake = JSON.parse(JSON.stringify(snake));
-            
-            score = 0;
-            gameSpeed = 150;
-            dx = 1;
-            dy = 0;
-            createFood();
-            drawInitialState();
-        }
-
-        function drawInitialState() {
-            clearCanvas();
-            drawFood();
-            drawSnake(0);
-        }
-        
-        function startSnakeGame() {
-            if (animationFrameId) cancelAnimationFrame(animationFrameId);
-            
-            if (isGameOver) {
-                 initSnakeGame();
-            }
-            isGameOver = false;
-            document.getElementById('start-game-btn').style.display = 'none';
-
-            lastLogicUpdateTime = performance.now();
-            animationFrameId = requestAnimationFrame(gameLoop);
-        }
-
-        function stopSnakeGame() {
-            if (animationFrameId) {
-                cancelAnimationFrame(animationFrameId);
-                animationFrameId = null;
-            }
-        }
-
-        function gameLoop(currentTime) {
-            animationFrameId = requestAnimationFrame(gameLoop);
-
-            if (isGameOver) {
-                gameOver();
-                return;
-            }
-
-            const timeSinceLastUpdate = currentTime - lastLogicUpdateTime;
-            if (timeSinceLastUpdate > gameSpeed) {
-                lastLogicUpdateTime = currentTime - (timeSinceLastUpdate % gameSpeed);
-                
-                changingDirection = false;
-                moveSnake();
-            }
-
-            const progress = Math.min((currentTime - lastLogicUpdateTime) / gameSpeed, 1);
-            
-            clearCanvas();
-            drawFood();
-            drawSnake(progress);
-        }
-
-        function clearCanvas() {
-            snakeCtx.fillStyle = '#121212';
-            snakeCtx.fillRect(0, 0, snakeCanvas.width, snakeCanvas.height);
-        }
-
-        function drawSnakePart(interpolatedX, interpolatedY) {
-            snakeCtx.fillStyle = '#2DB97B';
-            snakeCtx.strokeStyle = '#121212';
-            snakeCtx.fillRect(interpolatedX * gridSize, interpolatedY * gridSize, gridSize, gridSize);
-            snakeCtx.strokeRect(interpolatedX * gridSize, interpolatedY * gridSize, gridSize, gridSize);
-        }
-
-        function drawSnake(progress) {
-             snake.forEach((part, index) => {
-                const prevPart = previousSnake[index] || part;
-                const interpolatedX = prevPart.x + (part.x - prevPart.x) * progress;
-                const interpolatedY = prevPart.y + (part.y - prevPart.y) * progress;
-                drawSnakePart(interpolatedX, interpolatedY);
-            });
-        }
-        
-        function drawFood() {
-            snakeCtx.fillStyle = '#FD3A73';
-            snakeCtx.strokeStyle = '#121212';
-            snakeCtx.fillRect(food.x * gridSize, food.y * gridSize, gridSize, gridSize);
-            snakeCtx.strokeRect(food.x * gridSize, food.y * gridSize, gridSize, gridSize);
-        }
-
-        function moveSnake() {
-            previousSnake = JSON.parse(JSON.stringify(snake));
-            const head = {x: snake[0].x + dx, y: snake[0].y + dy};
-            if (checkGameOver(head)) {
-                isGameOver = true;
-                return;
-            }
-            snake.unshift(head);
-            const hasEatenFood = snake[0].x === food.x && snake[0].y === food.y;
-            if (hasEatenFood) {
-                score++;
-                document.getElementById('game-score').textContent = `Score: ${score}`;
-                gameSpeed = Math.max(50, 150 - score * 3);
-                updateHighScore(score);
-                createFood();
-            } else {
-                snake.pop();
-            }
-        }
-
-        function checkGameOver(head) {
-            for (let i = 1; i < snake.length; i++) { if (head.x === snake[i].x && head.y === snake[i].y) return true; }
-            const hitLeftWall = head.x < 0;
-            const hitRightWall = head.x >= tileCount;
-            const hitTopWall = head.y < 0;
-            const hitBottomWall = head.y >= tileCount;
-            return hitLeftWall || hitRightWall || hitTopWall || hitBottomWall;
-        }
-
+        function initSnakeGame() { resizeSnakeCanvas(); isGameOver = false; document.getElementById('start-game-btn').style.display = 'block'; document.getElementById('game-score').textContent = "Score: 0"; snake = [ {x: Math.floor(tileCount / 2), y: Math.floor(tileCount / 2)}, {x: Math.floor(tileCount / 2) - 1, y: Math.floor(tileCount / 2)}, {x: Math.floor(tileCount / 2) - 2, y: Math.floor(tileCount / 2)} ]; previousSnake = JSON.parse(JSON.stringify(snake)); score = 0; gameSpeed = 150; dx = 1; dy = 0; createFood(); drawInitialState(); }
+        function drawInitialState() { clearCanvas(); drawFood(); drawSnake(0); }
+        function startSnakeGame() { if (animationFrameId) cancelAnimationFrame(animationFrameId); if (isGameOver) { initSnakeGame(); } isGameOver = false; document.getElementById('start-game-btn').style.display = 'none'; lastLogicUpdateTime = performance.now(); animationFrameId = requestAnimationFrame(gameLoop); }
+        function stopSnakeGame() { if (animationFrameId) { cancelAnimationFrame(animationFrameId); animationFrameId = null; } }
+        function gameLoop(currentTime) { animationFrameId = requestAnimationFrame(gameLoop); if (isGameOver) { gameOver(); return; } const timeSinceLastUpdate = currentTime - lastLogicUpdateTime; if (timeSinceLastUpdate > gameSpeed) { lastLogicUpdateTime = currentTime - (timeSinceLastUpdate % gameSpeed); changingDirection = false; moveSnake(); } const progress = Math.min((currentTime - lastLogicUpdateTime) / gameSpeed, 1); clearCanvas(); drawFood(); drawSnake(progress); }
+        function clearCanvas() { snakeCtx.fillStyle = '#121212'; snakeCtx.fillRect(0, 0, snakeCanvas.width, snakeCanvas.height); }
+        function drawSnakePart(interpolatedX, interpolatedY) { snakeCtx.fillStyle = '#2DB97B'; snakeCtx.strokeStyle = '#121212'; snakeCtx.fillRect(interpolatedX * gridSize, interpolatedY * gridSize, gridSize, gridSize); snakeCtx.strokeRect(interpolatedX * gridSize, interpolatedY * gridSize, gridSize, gridSize); }
+        function drawSnake(progress) { snake.forEach((part, index) => { const prevPart = previousSnake[index] || part; const interpolatedX = prevPart.x + (part.x - prevPart.x) * progress; const interpolatedY = prevPart.y + (part.y - prevPart.y) * progress; drawSnakePart(interpolatedX, interpolatedY); }); }
+        function drawFood() { snakeCtx.fillStyle = '#FD3A73'; snakeCtx.strokeStyle = '#121212'; snakeCtx.fillRect(food.x * gridSize, food.y * gridSize, gridSize, gridSize); snakeCtx.strokeRect(food.x * gridSize, food.y * gridSize, gridSize, gridSize); }
+        function moveSnake() { previousSnake = JSON.parse(JSON.stringify(snake)); const head = {x: snake[0].x + dx, y: snake[0].y + dy}; if (checkGameOver(head)) { isGameOver = true; return; } snake.unshift(head); const hasEatenFood = snake[0].x === food.x && snake[0].y === food.y; if (hasEatenFood) { score++; document.getElementById('game-score').textContent = `Score: ${score}`; gameSpeed = Math.max(50, 150 - score * 3); updateHighScore(score); createFood(); } else { snake.pop(); } }
+        function checkGameOver(head) { for (let i = 1; i < snake.length; i++) { if (head.x === snake[i].x && head.y === snake[i].y) return true; } const hitLeftWall = head.x < 0; const hitRightWall = head.x >= tileCount; const hitTopWall = head.y < 0; const hitBottomWall = head.y >= tileCount; return hitLeftWall || hitRightWall || hitTopWall || hitBottomWall; }
         function randomTile(min = 0, max = tileCount - 1) { return Math.floor(Math.random() * (max - min + 1)) + min; }
-        
-        function createFood() {
-            food = {x: randomTile(), y: randomTile()};
-            snake.forEach(function isFoodOnSnake(part) { if (part.x === food.x && part.y === food.y) createFood(); });
-        }
-
-        function gameOver() {
-            stopSnakeGame();
-            alert(`ゲームオーバー！\n最終スコア: ${score}`);
-            document.getElementById('start-game-btn').style.display = 'block';
-        }
-        
-        function changeDirection(event) {
-            const LEFT_KEY = 37; const RIGHT_KEY = 39; const UP_KEY = 38; const DOWN_KEY = 40;
-            if (changingDirection) return;
-            changingDirection = true;
-            const keyPressed = event.keyCode;
-            const goingUp = dy === -1; const goingDown = dy === 1; const goingRight = dx === 1; const goingLeft = dx === -1;
-            if (keyPressed === LEFT_KEY && !goingRight) { dx = -1; dy = 0; }
-            if (keyPressed === UP_KEY && !goingDown) { dx = 0; dy = -1; }
-            if (keyPressed === RIGHT_KEY && !goingLeft) { dx = 1; dy = 0; }
-            if (keyPressed === DOWN_KEY && !goingUp) { dx = 0; dy = 1; }
-        }
+        function createFood() { food = {x: randomTile(), y: randomTile()}; snake.forEach(function isFoodOnSnake(part) { if (part.x === food.x && part.y === food.y) createFood(); }); }
+        function gameOver() { stopSnakeGame(); alert(`ゲームオーバー！\n最終スコア: ${score}`); document.getElementById('start-game-btn').style.display = 'block'; }
+        function changeDirection(event) { const LEFT_KEY = 37; const RIGHT_KEY = 39; const UP_KEY = 38; const DOWN_KEY = 40; if (changingDirection) return; changingDirection = true; const keyPressed = event.keyCode; const goingUp = dy === -1; const goingDown = dy === 1; const goingRight = dx === 1; const goingLeft = dx === -1; if (keyPressed === LEFT_KEY && !goingRight) { dx = -1; dy = 0; } if (keyPressed === UP_KEY && !goingDown) { dx = 0; dy = -1; } if (keyPressed === RIGHT_KEY && !goingLeft) { dx = 1; dy = 0; } if (keyPressed === DOWN_KEY && !goingUp) { dx = 0; dy = 1; } }
         document.addEventListener('keydown', changeDirection);
-
         let touchStartX = 0, touchStartY = 0;
         snakeCanvas.addEventListener('touchstart', e => { e.preventDefault(); touchStartX = e.changedTouches[0].screenX; touchStartY = e.changedTouches[0].screenY; }, { passive: false });
         snakeCanvas.addEventListener('touchend', e => { e.preventDefault(); let touchEndX = e.changedTouches[0].screenX; let touchEndY = e.changedTouches[0].screenY; handleSwipe(touchEndX, touchEndY); }, { passive: false });
-        function handleSwipe(touchEndX, touchEndY) {
-            const dxSwipe = touchEndX - touchStartX; const dySwipe = touchEndY - touchStartY;
-            if (changingDirection) return;
-            const goingUp = dy === -1; const goingDown = dy === 1; const goingRight = dx === 1; const goingLeft = dx === -1;
-            if (Math.abs(dxSwipe) > Math.abs(dySwipe)) {
-                if (dxSwipe > 0 && !goingLeft) { dx = 1; dy = 0; changingDirection = true; }
-                else if (dxSwipe < 0 && !goingRight) { dx = -1; dy = 0; changingDirection = true; }
-            } else {
-                if (dySwipe > 0 && !goingUp) { dx = 0; dy = 1; changingDirection = true; }
-                else if (dySwipe < 0 && !goingDown) { dx = 0; dy = -1; changingDirection = true; }
-            }
-        }
-        
+        function handleSwipe(touchEndX, touchEndY) { const dxSwipe = touchEndX - touchStartX; const dySwipe = touchEndY - touchStartY; if (changingDirection) return; const goingUp = dy === -1; const goingDown = dy === 1; const goingRight = dx === 1; const goingLeft = dx === -1; if (Math.abs(dxSwipe) > Math.abs(dySwipe)) { if (dxSwipe > 0 && !goingLeft) { dx = 1; dy = 0; changingDirection = true; } else if (dxSwipe < 0 && !goingRight) { dx = -1; dy = 0; changingDirection = true; } } else { if (dySwipe > 0 && !goingUp) { dx = 0; dy = 1; changingDirection = true; } else if (dySwipe < 0 && !goingDown) { dx = 0; dy = -1; changingDirection = true; } } }
         async function updateHighScore(score) { if (!loggedInUserId || !score) return; try { const userRef = db.collection('users').doc(loggedInUserId); const doc = await userRef.get(); if (doc.exists) { const currentHighScore = doc.data().pongHighScore || 0; if (score > currentHighScore) { await userRef.update({ pongHighScore: score }); console.log(`ハイスコア更新: ${score}点`); } } } catch(error) { console.error("ハイスコア更新エラー:", error); } }
-        
         // =======================================================
         // ▲▲▲ Snake Game Logic (ここまで) ▲▲▲
         // =======================================================
