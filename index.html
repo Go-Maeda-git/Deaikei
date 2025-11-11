@@ -100,9 +100,12 @@
         .ranking-info { flex-grow: 1; }
         .ranking-score { font-size: 22px; font-weight: bold; color: var(--theme-pink); }
         
-        /* Drawing Game Styles */
-        #drawing-game-canvas { background-color: #fff; border: 2px solid var(--theme-pink); max-width: 100%; cursor: crosshair; }
-        #drawing-status { margin-top: 15px; color: var(--text-muted); min-height: 1.5em; }
+        /* Pixel Game Styles */
+        #pixel-canvas { border: 2px solid var(--theme-pink); cursor: crosshair; image-rendering: pixelated; image-rendering: -moz-crisp-edges; image-rendering: crisp-edges; }
+        #pixel-status { margin-top: 15px; color: var(--text-muted); min-height: 1.5em; }
+        #color-palette { display: flex; justify-content: center; gap: 15px; margin-top: 15px; }
+        .color-choice { width: 40px; height: 40px; border-radius: 50%; cursor: pointer; border: 3px solid #555; }
+        .color-choice.selected { border-color: var(--text-light); }
     </style>
 </head>
 <body>
@@ -127,14 +130,19 @@
             <nav id="game-nav"></nav>
         </div>
         
-        <div id="drawing-game-screen" class="screen">
+        <div id="pixel-game-screen" class="screen">
             <div class="app-container game-container">
                 <h2>みんなのキャンバス</h2>
-                <p>1日1本だけ線を追加して、みんなで絵を完成させよう！</p>
-                <canvas id="drawing-game-canvas"></canvas>
-                <div id="drawing-status"></div>
+                <p>1日1ピクセルだけ色を置いて、みんなで絵を完成させよう！</p>
+                <canvas id="pixel-canvas"></canvas>
+                <div id="color-palette">
+                    <div class="color-choice selected" style="background-color: #FF0000;" data-color="FF0000"></div>
+                    <div class="color-choice" style="background-color: #00FF00;" data-color="00FF00"></div>
+                    <div class="color-choice" style="background-color: #0000FF;" data-color="0000FF"></div>
+                </div>
+                <div id="pixel-status"></div>
             </div>
-            <nav id="drawing-nav"></nav>
+            <nav id="pixel-nav"></nav>
         </div>
 
         <div id="ranking-screen" class="screen">
@@ -163,7 +171,7 @@
         const navHTML = `
             <button onclick="showTab('main-screen')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12.75 2.25A2.25 2.25 0 0010.5 4.5v15a2.25 2.25 0 002.25 2.25h.518a.75.75 0 00.74-1.023l-.26-1.037a1.5 1.5 0 011.025-1.742 1.5 1.5 0 011.742 1.025l.26 1.037a.75.75 0 00.74 1.023h.518a2.25 2.25 0 002.25-2.25v-15a2.25 2.25 0 00-2.25-2.25H12.75zM12 4.5h6.75v15H12V4.5zM3.75 6A2.25 2.25 0 001.5 8.25v9A2.25 2.25 0 003.75 19.5h.518a.75.75 0 00.74-1.023l-.26-1.037a1.5 1.5 0 011.025-1.742 1.5 1.5 0 011.742 1.025l.26 1.037A.75.75 0 008.482 19.5h.518A2.25 2.25 0 0011.25 17.25v-9A2.25 2.25 0 009 6H3.75zM3 8.25h6.75v9H3v-9z" /></svg></button>
             <button onclick="showTab('matches-screen')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M4.848 2.771A49.144 49.144 0 0112 2.25c2.43 0 4.817.178 7.152.52 1.978.292 3.348 2.024 3.348 3.97v6.02c0 1.946-1.37 3.678-3.348 3.97a48.901 48.901 0 01-3.476.383.39.39 0 00-.297.17l-2.755 4.133a.75.75 0 01-1.248 0l-2.755-4.133a.39.39 0 00-.297-.17 48.9 48.9 0 01-3.476-.384c-1.978-.29-3.348-2.024-3.348-3.97V6.741c0-1.946 1.37-3.68 3.348-3.97zM6.75 8.25a.75.75 0 01.75-.75h9a.75.75 0 010 1.5h-9a.75.75 0 01-.75-.75zm.75 2.25a.75.75 0 000 1.5H12a.75.75 0 000-1.5H7.5z" clip-rule="evenodd" /></svg></button>
-            <button onclick="showTab('drawing-game-screen')"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" /></svg></button>
+            <button onclick="showTab('pixel-game-screen')"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" /></svg></button>
             <button onclick="showTab('ranking-screen')"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:32px; height:32px;"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-6.75c-.621 0-1.125.504-1.125 1.125V18.75m9 0h-9" /><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 21.75h4.5m-4.5 0a3 3 0 01-3-3h-1.5a3 3 0 01-3-3V11.25a3 3 0 013-3h1.5a3 3 0 013 3v7.5m0-7.5h4.5m-4.5 0v-1.5a3 3 0 013-3h1.5a3 3 0 013 3v1.5m0 0h1.5a3 3 0 013 3v3.75a3 3 0 01-3 3h-1.5a3 3 0 01-3-3v-3.75m-4.5 0h4.5" /></svg></button>
             <button onclick="showTab('profile-screen')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z" clip-rule="evenodd" /></svg></button>
         `;
@@ -202,7 +210,7 @@
         function showTab(screenId) {
             if (unsubscribeChat) { unsubscribeChat(); unsubscribeChat = null; }
             stopSnakeGame();
-            stopDrawingGame();
+            stopPixelGame();
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             const screen = document.getElementById(screenId);
             if (screen) screen.classList.add('active');
@@ -212,7 +220,7 @@
             const navs = document.querySelectorAll('nav');
             if (screenId === 'main-screen') navs.forEach(nav => nav.children[0].classList.add('active'));
             if (screenId === 'matches-screen') navs.forEach(nav => nav.children[1].classList.add('active'));
-            if (screenId === 'drawing-game-screen') navs.forEach(nav => nav.children[2].classList.add('active'));
+            if (screenId === 'pixel-game-screen') navs.forEach(nav => nav.children[2].classList.add('active'));
             if (screenId === 'ranking-screen' || screenId === 'snake-game-screen') navs.forEach(nav => nav.children[3].classList.add('active'));
             if (screenId === 'profile-screen') navs.forEach(nav => nav.children[4].classList.add('active'));
             
@@ -220,10 +228,10 @@
             if (screenId === 'profile-screen') renderProfileEditor();
             if (screenId === 'ranking-screen') renderRanking();
             if (screenId === 'snake-game-screen') initSnakeGame();
-            if (screenId === 'drawing-game-screen') initDrawingGame();
+            if (screenId === 'pixel-game-screen') initPixelGame();
         }
 
-        async function handleProfileSetup() { const name = document.getElementById('register-name').value.trim(); if (!name) { alert('ニックネームは必須です。'); return; } const selectedAvatar = document.querySelector('#avatar-selection-grid .avatar-option.selected'); let avatarUrl = selectedAvatar ? selectedAvatar.dataset.url : '/Deaikei/images/user (1).png'; const user = auth.currentUser; if (!user) return; const studentId = user.email.split('@')[0]; const profileData = { uid: user.uid, studentId: studentId, name: name, photoURL: avatarUrl, faculty: document.getElementById('register-faculty').value, grade: document.getElementById('register-grade').value, interests: [], isBanned: false, blockedUsers: [], pongHighScore: 0, lastLineDrawnDate: "" }; await db.collection('users').doc(user.uid).set(profileData); await loadUsersForCards(); showTab('main-screen'); }
+        async function handleProfileSetup() { const name = document.getElementById('register-name').value.trim(); if (!name) { alert('ニックネームは必須です。'); return; } const selectedAvatar = document.querySelector('#avatar-selection-grid .avatar-option.selected'); let avatarUrl = selectedAvatar ? selectedAvatar.dataset.url : '/Deaikei/images/user (1).png'; const user = auth.currentUser; if (!user) return; const studentId = user.email.split('@')[0]; const profileData = { uid: user.uid, studentId: studentId, name: name, photoURL: avatarUrl, faculty: document.getElementById('register-faculty').value, grade: document.getElementById('register-grade').value, interests: [], isBanned: false, blockedUsers: [], pongHighScore: 0, lastPixelPlacedDate: "" }; await db.collection('users').doc(user.uid).set(profileData); await loadUsersForCards(); showTab('main-screen'); }
         
         async function loadUsersForCards() { if (!loggedInUserId) return; const stack = document.getElementById('card-stack'); stack.innerHTML = `<div id="no-more-cards"><h3>ユーザーを探しています...</h3></div>`; try { const myDoc = await db.collection('users').doc(loggedInUserId).get(); const myData = myDoc.data() || {}; const myBlockedUsers = myData.blockedUsers || []; const myLikesSnapshot = await db.collection('likes').where('from', '==', loggedInUserId).get(); const swipedUserIds = myLikesSnapshot.docs.map(doc => doc.data().to); swipedUserIds.push(...myBlockedUsers); const usersSnapshot = await db.collection('users').get(); allUsers = usersSnapshot.docs.map(doc => doc.data()).filter(user => user && user.uid && user.uid !== loggedInUserId && !user.isBanned && !swipedUserIds.includes(user.uid) && !(user.blockedUsers && user.blockedUsers.includes(loggedInUserId))); currentUserIndex = 0; renderCurrentCard(); } catch (error) { console.error("ユーザー読み込みエラー:", error); stack.innerHTML = `<div id="no-more-cards"><h3>エラーが発生しました</h3><p>ユーザー情報の取得に失敗しました。</p></div>`; } }
         function renderCurrentCard() { const stack = document.getElementById('card-stack'); const actions = document.getElementById('actions-area'); if (currentUserIndex >= allUsers.length) { stack.innerHTML = `<div id="no-more-cards"><h3>表示できる相手がいません</h3><p>新しいユーザーが参加するまで、<br>しばらくお待ちください。</p></div>`; actions.style.display = 'none'; return; } actions.style.display = 'flex'; const user = allUsers[currentUserIndex]; const imageUrl = user.photoURL || '/Deaikei/images/user (1).png'; const safeName = sanitizeHTML(user.name); const safeStudentId = sanitizeHTML(user.studentId || ''); const safeFaculty = sanitizeHTML(user.faculty); const safeGrade = sanitizeHTML(user.grade); const tagsHTML = (user.interests || []).map(tag => `<div class="profile-tag">${sanitizeHTML(tag)}</div>`).join(''); let dailyTopicHTML = ''; if (user.dailyAnswer && user.dailyTopicQuestion) { dailyTopicHTML = `<div class="daily-topic-area"><div class="question">${sanitizeHTML(user.dailyTopicQuestion)}</div><div class="answer">${sanitizeHTML(user.dailyAnswer)}</div></div>`; } stack.innerHTML = `<div class="profile-card" data-user-id="${user.uid}"><img src="${imageUrl}" class="profile-pic"><div class="profile-info"><div class="profile-header"><h3>${safeName} <small>(${safeStudentId})</small></h3><button class="user-action-btn" onclick="handleUserAction('${user.uid}', '${user.name}')">•••</button></div><p>${safeFaculty}・${safeGrade}</p><div class="profile-tags">${tagsHTML}</div>${dailyTopicHTML}</div></div>`; }
@@ -260,15 +268,16 @@
         async function updateHighScore(score) { if (!loggedInUserId || !score) return; try { const userRef = db.collection('users').doc(loggedInUserId); const doc = await userRef.get(); if (doc.exists) { const currentHighScore = doc.data().pongHighScore || 0; if (score > currentHighScore) { await userRef.update({ pongHighScore: score }); } } } catch(error) { console.error("ハイスコア更新エラー:", error); } }
         
         // =======================================================
-        // ▼▼▼ Drawing Game Logic ▼▼▼
+        // ▼▼▼ Pixel Game Logic ▼▼▼
         // =======================================================
-        const drawingCanvas = document.getElementById('drawing-game-canvas');
-        const drawingCtx = drawingCanvas.getContext('2d');
-        const drawingStatusEl = document.getElementById('drawing-status');
-        let unsubscribeDrawing;
-        let canDrawToday = false;
-        let isWaitingForEndPoint = false;
-        let startPoint = null;
+        const pixelCanvas = document.getElementById('pixel-canvas');
+        const pixelCtx = pixelCanvas.getContext('2d');
+        const pixelStatusEl = document.getElementById('pixel-status');
+        const colorPalette = document.getElementById('color-palette');
+        let unsubscribePixels;
+        let canPlacePixelToday = false;
+        let selectedColor = 'FF0000';
+        const PIXEL_GRID_SIZE = 100;
 
         function getTodayDateString() {
             const now = new Date();
@@ -276,95 +285,109 @@
             return new Date(now.getTime() + jstOffset).toISOString().split('T')[0];
         }
 
-        function initDrawingGame() {
-            const container = drawingCanvas.parentElement;
+        function initPixelGame() {
+            const container = pixelCanvas.parentElement;
             const size = Math.min(container.clientWidth * 0.95, 400);
-            drawingCanvas.width = size;
-            drawingCanvas.height = size;
+            pixelCanvas.width = size;
+            pixelCanvas.height = size;
 
-            checkDrawingAbility();
+            checkPixelAbility();
             
-            if (unsubscribeDrawing) unsubscribeDrawing();
-            unsubscribeDrawing = db.collection("canvas_lines").orderBy("timestamp", "asc").onSnapshot(snapshot => {
-                const lines = snapshot.docs.map(doc => doc.data());
-                drawAllLines(lines);
+            if (unsubscribePixels) unsubscribePixels();
+            unsubscribePixels = db.collection("canvas_pixels").onSnapshot(snapshot => {
+                const pixels = {};
+                snapshot.forEach(doc => { pixels[doc.id] = doc.data().color; });
+                drawAllPixels(pixels);
             });
 
-            drawingCanvas.addEventListener('click', handleCanvasClick);
+            pixelCanvas.addEventListener('click', handlePixelCanvasClick);
+            colorPalette.addEventListener('click', handleColorSelection);
         }
 
-        function stopDrawingGame() {
-            if (unsubscribeDrawing) {
-                unsubscribeDrawing();
-                unsubscribeDrawing = null;
+        function stopPixelGame() {
+            if (unsubscribePixels) {
+                unsubscribePixels();
+                unsubscribePixels = null;
             }
-            drawingCanvas.removeEventListener('click', handleCanvasClick);
+            pixelCanvas.removeEventListener('click', handlePixelCanvasClick);
+            colorPalette.removeEventListener('click', handleColorSelection);
         }
 
-        async function checkDrawingAbility() {
+        async function checkPixelAbility() {
             if (!loggedInUserId) return;
-            const userDoc = await db.collection('users').doc(loggedInUserId).get();
-            const userData = userDoc.data();
-            const today = getTodayDateString();
-
-            if (userData.lastLineDrawnDate === today) {
-                canDrawToday = false;
-                drawingStatusEl.textContent = "今日の分はもう描きました。また明日！";
-            } else {
-                canDrawToday = true;
-                drawingStatusEl.textContent = "クリックして線の始点を決めてください。";
-            }
-            isWaitingForEndPoint = false;
-            startPoint = null;
-        }
-
-        function drawAllLines(lines) {
-            drawingCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
-            lines.forEach(line => {
-                drawingCtx.beginPath();
-                drawingCtx.moveTo(line.x1, line.y1);
-                drawingCtx.lineTo(line.x2, line.y2);
-                drawingCtx.strokeStyle = line.color || '#FD3A73';
-                drawingCtx.lineWidth = line.width || 2;
-                drawingCtx.stroke();
-            });
-        }
-
-        async function handleCanvasClick(event) {
-            if (!canDrawToday) return;
-
-            const rect = drawingCanvas.getBoundingClientRect();
-            const x = event.clientX - rect.left;
-            const y = event.clientY - rect.top;
-
-            if (!isWaitingForEndPoint) {
-                startPoint = { x, y };
-                isWaitingForEndPoint = true;
-                drawingStatusEl.textContent = "クリックして線の終点を決めてください。";
-            } else {
-                const endPoint = { x, y };
-                const newLine = {
-                    x1: startPoint.x, y1: startPoint.y,
-                    x2: endPoint.x, y2: endPoint.y,
-                    color: '#FD3A73', width: 2,
-                    userId: loggedInUserId,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                };
-
-                try {
-                    await db.collection('canvas_lines').add(newLine);
-                    await db.collection('users').doc(loggedInUserId).update({ lastLineDrawnDate: getTodayDateString() });
-                    
-                    canDrawToday = false;
-                    isWaitingForEndPoint = false;
-                    startPoint = null;
-                    drawingStatusEl.textContent = "線を追加しました！続きはまた明日。";
-                } catch (error) {
-                    console.error("線の保存エラー:", error);
-                    drawingStatusEl.textContent = "エラーが発生しました。もう一度試してください。";
-                    isWaitingForEndPoint = false;
-                    startPoint = null;
+            pixelStatusEl.textContent = "ステータスを確認中...";
+            try {
+                const userDoc = await db.collection('users').doc(loggedInUserId).get();
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    const today = getTodayDateString();
+                    if (userData.lastPixelPlacedDate === today) {
+                        canPlacePixelToday = false;
+                        pixelStatusEl.textContent = "今日の分はもう置きました。また明日！";
+                    } else {
+                        canPlacePixelToday = true;
+                        pixelStatusEl.textContent = "好きな色を選んで、キャンバスをクリックしてください。";
+                    }
                 }
+            } catch (error) {
+                console.error("ユーザーデータ取得エラー:", error);
+                pixelStatusEl.textContent = "エラーが発生しました。リロードしてください。";
+            }
+        }
+
+        function drawAllPixels(pixels) {
+            const pixelSize = pixelCanvas.width / PIXEL_GRID_SIZE;
+            pixelCtx.fillStyle = '#FFFFFF';
+            pixelCtx.fillRect(0, 0, pixelCanvas.width, pixelCanvas.height);
+
+            for (let y = 0; y < PIXEL_GRID_SIZE; y++) {
+                for (let x = 0; x < PIXEL_GRID_SIZE; x++) {
+                    const docId = `${x}_${y}`;
+                    if (pixels[docId]) {
+                        pixelCtx.fillStyle = `#${pixels[docId]}`;
+                        pixelCtx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+                    }
+                }
+            }
+        }
+        
+        function handleColorSelection(event) {
+            if (event.target.classList.contains('color-choice')) {
+                document.querySelectorAll('.color-choice').forEach(el => el.classList.remove('selected'));
+                event.target.classList.add('selected');
+                selectedColor = event.target.dataset.color;
+            }
+        }
+
+        async function handlePixelCanvasClick(event) {
+            if (!canPlacePixelToday) return;
+
+            const rect = pixelCanvas.getBoundingClientRect();
+            const pixelSize = pixelCanvas.width / PIXEL_GRID_SIZE;
+            const x = Math.floor((event.clientX - rect.left) / pixelSize);
+            const y = Math.floor((event.clientY - rect.top) / pixelSize);
+
+            if (x < 0 || x >= PIXEL_GRID_SIZE || y < 0 || y >= PIXEL_GRID_SIZE) return;
+
+            const docId = `${x}_${y}`;
+            const pixelData = {
+                color: selectedColor,
+                userId: loggedInUserId,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            canPlacePixelToday = false; // ダブルクリック防止
+            pixelStatusEl.textContent = "保存中...";
+
+            try {
+                await db.collection('canvas_pixels').doc(docId).set(pixelData);
+                await db.collection('users').doc(loggedInUserId).update({ lastPixelPlacedDate: getTodayDateString() });
+                
+                pixelStatusEl.textContent = "ピクセルを置きました！続きはまた明日。";
+            } catch (error) {
+                console.error("ピクセル保存エラー:", error);
+                pixelStatusEl.textContent = "エラーが発生しました。もう一度試してください。";
+                canPlacePixelToday = true; // エラーなら再試行可能にする
             }
         }
         
@@ -384,7 +407,7 @@
                     alert('ご報告ありがとうございます。開発チームが内容を確認いたします。');
                 } catch (error) {
                     console.error("不具合報告エラー:", error);
-                    alert('報告の送信に失敗しました。');
+                    alert('報告の送信に失敗しました。時間をおいて再度お試しください。');
                 }
             }
         }
