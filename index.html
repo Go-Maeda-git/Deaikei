@@ -115,7 +115,6 @@
         <div id="ranking-screen" class="screen">
             <div class="list-container">
                 <h2>ハイスコアランキング</h2>
-                <!-- ★★★ 修正点: ゲームをプレイするためのボタンをここに追加 ★★★ -->
                 <button class="play-game-button" onclick="showTab('pong-game-screen')" style="width: 100%; margin-bottom: 20px;">ゲームをプレイする</button>
                 <div id="ranking-list"></div>
             </div>
@@ -181,49 +180,150 @@
         async function handleNope() { if (currentUserIndex >= allUsers.length) return; const card = document.querySelector('.profile-card'); if (card) { card.classList.add('exit-nope'); const targetUser = allUsers[currentUserIndex]; if (targetUser && targetUser.uid) { await db.collection('likes').add({ from: loggedInUserId, to: targetUser.uid, type: 'nope' }); } setTimeout(() => { currentUserIndex++; renderCurrentCard(); }, 400); } }
         async function handleLikeClick() { if (currentUserIndex >= allUsers.length || !loggedInUserId) return; const targetUser = allUsers[currentUserIndex]; if (!targetUser || !targetUser.uid) { console.error("Invalid target user data. Skipping."); currentUserIndex++; renderCurrentCard(); return; } const card = document.querySelector('.profile-card'); if (card) { card.classList.add('exit-like'); try { await db.collection('likes').add({ from: loggedInUserId, to: targetUser.uid }); const result = await db.collection('likes').where('from', '==', targetUser.uid).where('to', '==', loggedInUserId).get(); if (!result.empty) { alert(`🎉 ${targetUser.name}さんとマッチングしました！`); } setTimeout(() => { currentUserIndex++; renderCurrentCard(); }, 400); } catch (error) { console.error("Like処理エラー:", error); setTimeout(() => { currentUserIndex++; renderCurrentCard(); }, 400); } } }
         
-        // Pong Game Logic
+        // =======================================================
+        // Pong Game Logic (修正済み)
+        // =======================================================
         const pongCanvas = document.getElementById('pong-canvas');
         const pongCtx = pongCanvas.getContext('2d');
         let gameLoopId;
-        const paddleWidth = 10, paddleHeight = 100;
+        const paddleWidth = 10;
+        let paddleHeight = 100; // ★修正1: constからletに変更し、値を再代入できるようにする
         let player, cpu, ball;
 
-        // ★★★ 修正点: キャンバスをレスポンシブにする関数 ★★★
         function resizePongCanvas() {
             const container = pongCanvas.parentElement;
-            const size = Math.min(container.clientWidth * 0.9, 400); // PCでも最大400px
+            // スマートフォンの画面幅に合わせつつ、PCでは大きくなりすぎないように調整
+            const size = Math.min(container.clientWidth * 0.95, 400); 
             pongCanvas.width = size;
-            pongCanvas.height = size * 1.25; // 縦横比を維持 (400x500)
-            paddleHeight = pongCanvas.height / 5;
+            pongCanvas.height = size * 1.25; // 縦横比を 4:5 に維持
+            paddleHeight = pongCanvas.height / 5; // キャンバスの高さに応じてパドルの高さを調整
         }
 
         window.addEventListener('resize', resizePongCanvas);
 
         function initPongGame() {
-            resizePongCanvas(); // 画面表示時にサイズを調整
+            resizePongCanvas();
             const canvas = pongCanvas;
             player = { x: 10, y: canvas.height / 2 - paddleHeight / 2, width: paddleWidth, height: paddleHeight, score: 0 };
-            cpu = { x: canvas.width - 20, y: canvas.height / 2 - paddleHeight / 2, width: paddleWidth, height: paddleHeight, score: 0 };
+            cpu = { x: canvas.width - (paddleWidth + 10), y: canvas.height / 2 - paddleHeight / 2, width: paddleWidth, height: paddleHeight, score: 0 };
             ball = { x: canvas.width / 2, y: canvas.height / 2, radius: 8, speed: 5, velX: 5, velY: 5 };
             document.getElementById('start-game-btn').style.display = 'block';
             document.getElementById('game-score').textContent = "0 - 0";
             drawPongGame();
         }
-        function startPongGame() { if (gameLoopId) return; document.getElementById('start-game-btn').style.display = 'none'; player.score = 0; cpu.score = 0; resetBall(); gameLoopId = requestAnimationFrame(updatePongGame); }
-        function stopPongGame() { if (gameLoopId) { cancelAnimationFrame(gameLoopId); gameLoopId = null; } }
+
+        function startPongGame() { 
+            if (gameLoopId) return; 
+            document.getElementById('start-game-btn').style.display = 'none'; 
+            player.score = 0; 
+            cpu.score = 0; 
+            resetBall(); 
+            gameLoopId = requestAnimationFrame(updatePongGame); 
+        }
+
+        function stopPongGame() { 
+            if (gameLoopId) { 
+                cancelAnimationFrame(gameLoopId); 
+                gameLoopId = null; 
+            } 
+        }
+
         function drawRect(x, y, w, h, color) { pongCtx.fillStyle = color; pongCtx.fillRect(x, y, w, h); }
         function drawCircle(x, y, r, color) { pongCtx.fillStyle = color; pongCtx.beginPath(); pongCtx.arc(x, y, r, 0, Math.PI*2, false); pongCtx.closePath(); pongCtx.fill(); }
         function drawNet() { for(let i=0; i < pongCanvas.height; i+=15) { drawRect(pongCanvas.width/2 - 1, i, 2, 10, "WHITE"); } }
-        function drawPongGame() { drawRect(0, 0, pongCanvas.width, pongCanvas.height, "#121212"); drawNet(); drawRect(player.x, player.y, player.width, player.height, "WHITE"); drawRect(cpu.x, cpu.y, cpu.width, cpu.height, "WHITE"); drawCircle(ball.x, ball.y, ball.radius, "WHITE"); document.getElementById('game-score').textContent = `${player.score} - ${cpu.score}`; }
-        function resetBall() { ball.x = pongCanvas.width / 2; ball.y = pongCanvas.height / 2; ball.velX = -ball.velX; ball.speed = 5; }
-        function updatePongGame() { ball.x += ball.velX; ball.y += ball.velY; const cpuLevel = 0.08 + (player.score * 0.005); cpu.y += (ball.y - (cpu.y + cpu.height/2)) * cpuLevel; if(ball.y + ball.radius > pongCanvas.height || ball.y - ball.radius < 0) { ball.velY = -ball.velY; } let p = (ball.x < pongCanvas.width/2) ? player : cpu; if (collision(ball, p)) { let collidePoint = (ball.y - (p.y + p.height/2)); collidePoint = collidePoint / (p.height/2); let angleRad = (Math.PI/4) * collidePoint; let direction = (ball.x < pongCanvas.width/2) ? 1 : -1; ball.velX = direction * ball.speed * Math.cos(angleRad); ball.velY = ball.speed * Math.sin(angleRad); ball.speed += 0.2; } if (ball.x - ball.radius < 0) { cpu.score++; if (cpu.score >= 5) { gameOver(false); return; } resetBall(); } else if (ball.x + ball.radius > pongCanvas.width) { player.score++; updateHighScore(player.score); resetBall(); } drawPongGame(); gameLoopId = requestAnimationFrame(updatePongGame); }
-        function collision(b, p) { p.top = p.y; p.bottom = p.y + p.height; p.left = p.x; p.right = p.x + p.width; b.top = b.y - b.radius; b.bottom = b.y + b.radius; b.left = b.x - b.radius; b.right = b.x + b.radius; return p.left < b.right && p.top < b.bottom && p.right > b.left && p.bottom > b.top; }
-        async function gameOver(playerWon) { stopPongGame(); const message = playerWon ? `あなたの勝ちです！ スコア: ${player.score}` : `CPUの勝ちです。最終スコア: ${player.score}`; alert(message); document.getElementById('start-game-btn').style.display = 'block'; }
-        async function updateHighScore(score) { if (!loggedInUserId || !score) return; try { const userRef = db.collection('users').doc(loggedInUserId); const doc = await userRef.get(); if (doc.exists) { const currentHighScore = doc.data().pongHighScore || 0; if (score > currentHighScore) { await userRef.update({ pongHighScore: score }); console.log(`ハイスコア更新: ${score}点`); } } } catch(error) { console.error("ハイスコア更新エラー:", error); } }
-        pongCanvas.addEventListener('mousemove', e => { let rect = pongCanvas.getBoundingClientRect(); player.y = e.clientY - rect.top - player.height / 2; });
-        pongCanvas.addEventListener('touchmove', e => { e.preventDefault(); let rect = pongCanvas.getBoundingClientRect(); player.y = e.touches[0].clientY - rect.top - player.height / 2; }, { passive: false });
+        
+        function drawPongGame() { 
+            drawRect(0, 0, pongCanvas.width, pongCanvas.height, "#121212"); 
+            drawNet(); 
+            drawRect(player.x, player.y, player.width, player.height, "WHITE"); 
+            drawRect(cpu.x, cpu.y, cpu.width, cpu.height, "WHITE"); 
+            drawCircle(ball.x, ball.y, ball.radius, "WHITE"); 
+            document.getElementById('game-score').textContent = `${player.score} - ${cpu.score}`; 
+        }
+        
+        function resetBall() {
+            ball.x = pongCanvas.width / 2;
+            ball.y = pongCanvas.height / 2;
+            ball.velX = -ball.velX; // 速度の向きを反転
+            ball.speed = 5;
+        }
 
+        function updatePongGame() {
+            ball.x += ball.velX;
+            ball.y += ball.velY;
+            
+            const cpuLevel = 0.08 + (player.score * 0.005);
+            cpu.y += (ball.y - (cpu.y + cpu.height/2)) * cpuLevel;
+            
+            // ★修正2: CPUパドルが画面外に出ないようにする
+            if (cpu.y < 0) cpu.y = 0;
+            if (cpu.y > pongCanvas.height - cpu.height) cpu.y = pongCanvas.height - cpu.height;
+
+            if(ball.y + ball.radius > pongCanvas.height || ball.y - ball.radius < 0) {
+                ball.velY = -ball.velY;
+            }
+
+            let p = (ball.x < pongCanvas.width/2) ? player : cpu;
+            if (collision(ball, p)) {
+                let collidePoint = (ball.y - (p.y + p.height/2));
+                collidePoint = collidePoint / (p.height/2);
+                let angleRad = (Math.PI/4) * collidePoint;
+                let direction = (ball.x < pongCanvas.width/2) ? 1 : -1;
+                ball.velX = direction * ball.speed * Math.cos(angleRad);
+                ball.velY = ball.speed * Math.sin(angleRad);
+                ball.speed += 0.2;
+            }
+
+            if (ball.x - ball.radius < 0) {
+                cpu.score++;
+                if (cpu.score >= 5) {
+                    gameOver();
+                    return; // ゲームループを停止
+                }
+                resetBall();
+            } else if (ball.x + ball.radius > pongCanvas.width) {
+                player.score++;
+                updateHighScore(player.score);
+                resetBall();
+            }
+
+            drawPongGame();
+            gameLoopId = requestAnimationFrame(updatePongGame);
+        }
+
+        function collision(b, p) {
+            p.top = p.y; p.bottom = p.y + p.height; p.left = p.x; p.right = p.x + p.width;
+            b.top = b.y - b.radius; b.bottom = b.y + b.radius; b.left = b.x - b.radius; b.right = b.x + b.radius;
+            return p.left < b.right && p.top < b.bottom && p.right > b.left && p.bottom > b.top;
+        }
+
+        function gameOver() {
+            stopPongGame();
+            alert(`ゲームオーバー！\n最終スコア: ${player.score}`);
+            document.getElementById('start-game-btn').style.display = 'block';
+        }
+
+        async function updateHighScore(score) { if (!loggedInUserId || !score) return; try { const userRef = db.collection('users').doc(loggedInUserId); const doc = await userRef.get(); if (doc.exists) { const currentHighScore = doc.data().pongHighScore || 0; if (score > currentHighScore) { await userRef.update({ pongHighScore: score }); console.log(`ハイスコア更新: ${score}点`); } } } catch(error) { console.error("ハイスコア更新エラー:", error); } }
+        
+        // ★修正3: プレイヤーパドルを動かす処理を関数にまとめる
+        function movePaddle(y) {
+            let rect = pongCanvas.getBoundingClientRect();
+            // Y座標を計算し、画面内に収まるように制限
+            let newY = y - rect.top - player.height / 2;
+            if (newY < 0) newY = 0;
+            if (newY > pongCanvas.height - player.height) newY = pongCanvas.height - player.height;
+            player.y = newY;
+        }
+
+        pongCanvas.addEventListener('mousemove', e => movePaddle(e.clientY));
+        pongCanvas.addEventListener('touchmove', e => {
+            e.preventDefault();
+            movePaddle(e.touches[0].clientY);
+        }, { passive: false });
+
+        // =======================================================
         // Ranking Logic
+        // =======================================================
         async function renderRanking() { const rankingList = document.getElementById('ranking-list'); rankingList.innerHTML = "<p>ランキングを読み込み中...</p>"; try { const snapshot = await db.collection('users').orderBy('pongHighScore', 'desc').limit(50).get(); rankingList.innerHTML = ""; if (snapshot.empty) { rankingList.innerHTML = "<p>まだ誰もプレイしていません。</p>"; return; } let rank = 1; snapshot.forEach(doc => { const user = doc.data(); if (!user.pongHighScore) return; const imageUrl = user.photoURL || '/Deaikei/images/user (1).png'; rankingList.innerHTML += `<div class="ranking-item"><div class="ranking-rank">${rank}</div><img src="${imageUrl}" class="ranking-avatar"><div class="ranking-info"><h4>${sanitizeHTML(user.name)}</h4><p>${sanitizeHTML(user.faculty)}・${sanitizeHTML(user.grade)}</p></div><div class="ranking-score">${user.pongHighScore}</div></div>`; rank++; }); } catch (error) { console.error("ランキング取得エラー:", error); rankingList.innerHTML = "<p>ランキングの取得に失敗しました。</p>"; } }
         
         // Other Helper Functions
