@@ -16,11 +16,19 @@
         .screen.active { display: flex; }
         .app-container { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; overflow: hidden; }
         #card-stack { position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
-        .profile-card { position: absolute; width: 90vw; max-width: 380px; height: 75vh; max-height: 600px; background: var(--card-dark); border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; transition: transform 0.4s ease, opacity 0.4s ease; }
+        .profile-card { position: absolute; width: 90vw; max-width: 380px; height: 75vh; max-height: 600px; background: var(--card-dark); border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; }
         .profile-card.exit-nope { transform: translateX(-150%) rotate(-30deg); opacity: 0; }
         .profile-card.exit-like { transform: translateX(150%) rotate(30deg); opacity: 0; }
         .profile-pic { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
-        .profile-info { position: relative; z-index: 2; padding: 25px; background: linear-gradient(to top, rgba(0,0,0,0.95) 30%, transparent); }
+        
+        /* ▼▼▼ プロフィールカードのタグ見切れ修正 ▼▼▼ */
+        .profile-info { 
+            position: relative; z-index: 2; padding: 25px; 
+            background: linear-gradient(to top, rgba(0,0,0,0.95) 30%, transparent); 
+            max-height: 60%; overflow-y: auto;
+        }
+        /* ▲▲▲ ここまで ▲▲▲ */
+
         .profile-header { display: flex; justify-content: space-between; align-items: center; }
         .profile-info h3 { font-size: 28px; margin: 0; }
         .profile-info h3 small { font-size: 0.5em; color: var(--text-muted); margin-left: 8px; }
@@ -48,13 +56,7 @@
         .login-container input, .login-container select { width: 100%; max-width: 300px; border-radius: 25px; text-align: center; background-color: var(--card-dark); color: var(--text-light); border: 1px solid #444; padding: 12px; margin-bottom: 10px;}
         .login-container button { width: 100%; max-width: 300px; border-radius: 25px; background: linear-gradient(90deg, #FD297B, #FF655B); border: none; padding: 12px; color: white; font-weight: bold; cursor: pointer; }
         .login-container button:disabled { background: #555; cursor: not-allowed; }
-
-        #profile-setup-screen .login-container {
-            justify-content: flex-start;
-            overflow-y: auto;
-            padding: 40px 20px;
-        }
-
+        #profile-setup-screen .login-container { justify-content: flex-start; overflow-y: auto; padding: 40px 20px; }
         .list-container { width: 100%; flex-grow: 1; overflow-y: auto; padding: 20px 20px 80px; }
         .list-container h2 { color: var(--theme-pink); }
         .match-item { display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #333; cursor: pointer; position: relative; } 
@@ -64,7 +66,6 @@
         .profile-edit-section .delete-button { background: #dc3545; }
         .profile-edit-section .logout-button { background: #6c757d; }
         .profile-edit-section .report-button { background: #ffc107; color: #121212;}
-        
         #avatar-selection-grid, #avatar-edit-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; max-width: 300px; margin: 1em auto; }
         .avatar-option { width: 100%; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: border-color 0.2s; }
         .avatar-option.selected { border-color: var(--theme-pink); }
@@ -89,7 +90,7 @@
         .profile-edit-section textarea { width: 100%; max-width: 300px; background: #3e3e3e; border-radius: 15px; padding: 12px; border: 1px solid #555; color: white; min-height: 80px; margin-top: 0.5em;}
         
         /* Game Styles */
-        .game-container { text-align: center; padding: 10px; }
+        .game-container { text-align: center; padding: 10px; width: 100%;}
         #snake-canvas { background-color: #000; border: 2px solid var(--theme-pink); max-width: 100%; }
         .game-ui { display: flex; justify-content: space-around; align-items: center; padding: 10px 0; }
         .game-ui button, .play-game-button { background: var(--theme-pink); color: white; border: none; padding: 10px 20px; border-radius: 20px; font-size: 16px; cursor: pointer; }
@@ -106,6 +107,16 @@
         #color-palette { display: flex; justify-content: center; gap: 15px; margin-top: 15px; }
         .color-choice { width: 40px; height: 40px; border-radius: 50%; cursor: pointer; border: 3px solid #555; }
         .color-choice.selected { border-color: var(--text-light); }
+        
+        /* Shiritori Game Styles */
+        #shiritori-turn-info { padding: 10px; background-color: var(--card-dark); border-radius: 10px; margin-bottom: 15px; }
+        #shiritori-history { width: 100%; max-width: 350px; height: 40vh; background-color: #000; border: 1px solid #444; border-radius: 10px; overflow-y: auto; padding: 10px; margin-bottom: 15px; display: flex; flex-direction: column; }
+        .shiritori-word { padding: 5px 10px; border-radius: 15px; margin-bottom: 5px; max-width: 80%; }
+        .shiritori-word.mine { background-color: var(--theme-pink); align-self: flex-end; text-align: right;}
+        .shiritori-word.others { background-color: #3e3e3e; align-self: flex-start; }
+        .shiritori-word small { font-size: 0.7em; color: var(--text-muted); display: block; }
+        #shiritori-input-area { display: flex; width: 100%; max-width: 350px; gap: 10px; }
+        #shiritori-input { flex-grow: 1; }
     </style>
 </head>
 <body>
@@ -144,11 +155,24 @@
             </div>
             <nav id="pixel-nav"></nav>
         </div>
+        
+        <div id="shiritori-game-screen" class="screen">
+            <div class="app-container game-container">
+                <h2>みんなでしりとり</h2>
+                <div id="shiritori-turn-info">読み込み中...</div>
+                <div id="shiritori-history"></div>
+                <div id="shiritori-input-area" class="login-container">
+                    <input type="text" id="shiritori-input" placeholder="ひらがなで入力">
+                    <button id="shiritori-submit-btn" onclick="handleShiritoriSubmit()">送信</button>
+                </div>
+            </div>
+            <nav id="shiritori-nav"></nav>
+        </div>
 
         <div id="ranking-screen" class="screen">
             <div class="list-container">
                 <h2>ハイスコアランキング</h2>
-                <button class="play-game-button" onclick="showTab('snake-game-screen')" style="width: 100%; margin-bottom: 20px;">ゲームをプレイする</button>
+                <button class="play-game-button" onclick="showTab('snake-game-screen')" style="width: 100%; margin-bottom: 20px;">蛇ゲームをプレイ</button>
                 <div id="ranking-list"></div>
             </div>
             <nav id="ranking-nav"></nav>
@@ -167,10 +191,12 @@
         let loggedInUserId = null, allUsers = [], currentUserIndex = 0;
         let currentChatRoomId = null, unsubscribeChat = null;
         let userInterestsCache = [];
+        let usersCache = {}; // ユーザー情報をキャッシュするオブジェクト
 
         const navHTML = `
             <button onclick="showTab('main-screen')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12.75 2.25A2.25 2.25 0 0010.5 4.5v15a2.25 2.25 0 002.25 2.25h.518a.75.75 0 00.74-1.023l-.26-1.037a1.5 1.5 0 011.025-1.742 1.5 1.5 0 011.742 1.025l.26 1.037a.75.75 0 00.74 1.023h.518a2.25 2.25 0 002.25-2.25v-15a2.25 2.25 0 00-2.25-2.25H12.75zM12 4.5h6.75v15H12V4.5zM3.75 6A2.25 2.25 0 001.5 8.25v9A2.25 2.25 0 003.75 19.5h.518a.75.75 0 00.74-1.023l-.26-1.037a1.5 1.5 0 011.025-1.742 1.5 1.5 0 011.742 1.025l.26 1.037A.75.75 0 008.482 19.5h.518A2.25 2.25 0 0011.25 17.25v-9A2.25 2.25 0 009 6H3.75zM3 8.25h6.75v9H3v-9z" /></svg></button>
             <button onclick="showTab('matches-screen')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M4.848 2.771A49.144 49.144 0 0112 2.25c2.43 0 4.817.178 7.152.52 1.978.292 3.348 2.024 3.348 3.97v6.02c0 1.946-1.37 3.678-3.348 3.97a48.901 48.901 0 01-3.476.383.39.39 0 00-.297.17l-2.755 4.133a.75.75 0 01-1.248 0l-2.755-4.133a.39.39 0 00-.297-.17 48.9 48.9 0 01-3.476-.384c-1.978-.29-3.348-2.024-3.348-3.97V6.741c0-1.946 1.37-3.68 3.348-3.97zM6.75 8.25a.75.75 0 01.75-.75h9a.75.75 0 010 1.5h-9a.75.75 0 01-.75-.75zm.75 2.25a.75.75 0 000 1.5H12a.75.75 0 000-1.5H7.5z" clip-rule="evenodd" /></svg></button>
+            <button onclick="showTab('shiritori-game-screen')"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" /></svg></button>
             <button onclick="showTab('pixel-game-screen')"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" /></svg></button>
             <button onclick="showTab('ranking-screen')"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:32px; height:32px;"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-6.75c-.621 0-1.125.504-1.125 1.125V18.75m9 0h-9" /><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 21.75h4.5m-4.5 0a3 3 0 01-3-3h-1.5a3 3 0 01-3-3V11.25a3 3 0 013-3h1.5a3 3 0 013 3v7.5m0-7.5h4.5m-4.5 0v-1.5a3 3 0 013-3h1.5a3 3 0 013 3v1.5m0 0h1.5a3 3 0 013 3v3.75a3 3 0 01-3 3h-1.5a3 3 0 01-3-3v-3.75m-4.5 0h4.5" /></svg></button>
             <button onclick="showTab('profile-screen')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z" clip-rule="evenodd" /></svg></button>
@@ -200,10 +226,7 @@
                     showTab('profile-setup-screen');
                 }
             } else {
-                loggedInUserId = null;
-                allUsers = [];
-                currentUserIndex = 0;
-                showTab('login-screen');
+                loggedInUserId = null; allUsers = []; currentUserIndex = 0; showTab('login-screen');
             }
         });
         
@@ -211,6 +234,7 @@
             if (unsubscribeChat) { unsubscribeChat(); unsubscribeChat = null; }
             stopSnakeGame();
             stopPixelGame();
+            stopShiritoriGame();
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             const screen = document.getElementById(screenId);
             if (screen) screen.classList.add('active');
@@ -220,15 +244,17 @@
             const navs = document.querySelectorAll('nav');
             if (screenId === 'main-screen') navs.forEach(nav => nav.children[0].classList.add('active'));
             if (screenId === 'matches-screen') navs.forEach(nav => nav.children[1].classList.add('active'));
-            if (screenId === 'pixel-game-screen') navs.forEach(nav => nav.children[2].classList.add('active'));
-            if (screenId === 'ranking-screen' || screenId === 'snake-game-screen') navs.forEach(nav => nav.children[3].classList.add('active'));
-            if (screenId === 'profile-screen') navs.forEach(nav => nav.children[4].classList.add('active'));
+            if (screenId === 'shiritori-game-screen') navs.forEach(nav => nav.children[2].classList.add('active'));
+            if (screenId === 'pixel-game-screen') navs.forEach(nav => nav.children[3].classList.add('active'));
+            if (screenId === 'ranking-screen' || screenId === 'snake-game-screen') navs.forEach(nav => nav.children[4].classList.add('active'));
+            if (screenId === 'profile-screen') navs.forEach(nav => nav.children[5].classList.add('active'));
             
             if (screenId === 'matches-screen') renderMatches();
             if (screenId === 'profile-screen') renderProfileEditor();
             if (screenId === 'ranking-screen') renderRanking();
             if (screenId === 'snake-game-screen') initSnakeGame();
             if (screenId === 'pixel-game-screen') initPixelGame();
+            if (screenId === 'shiritori-game-screen') initShiritoriGame();
         }
 
         async function handleProfileSetup() { const name = document.getElementById('register-name').value.trim(); if (!name) { alert('ニックネームは必須です。'); return; } const selectedAvatar = document.querySelector('#avatar-selection-grid .avatar-option.selected'); let avatarUrl = selectedAvatar ? selectedAvatar.dataset.url : '/Deaikei/images/user (1).png'; const user = auth.currentUser; if (!user) return; const studentId = user.email.split('@')[0]; const profileData = { uid: user.uid, studentId: studentId, name: name, photoURL: avatarUrl, faculty: document.getElementById('register-faculty').value, grade: document.getElementById('register-grade').value, interests: [], isBanned: false, blockedUsers: [], pongHighScore: 0, lastPixelPlacedDate: "" }; await db.collection('users').doc(user.uid).set(profileData); await loadUsersForCards(); showTab('main-screen'); }
@@ -242,10 +268,8 @@
         // =======================================================
         // ▼▼▼ Snake Game Logic ▼▼▼
         // =======================================================
-        const snakeCanvas = document.getElementById('snake-canvas'); const snakeCtx = snakeCanvas.getContext('2d'); let animationFrameId; let lastLogicUpdateTime = 0; let gameSpeed = 150; let gridSize = 20; let tileCount; let snake; let previousSnake; let food; let score; let dx, dy; let changingDirection; let isGameOver;
-        function resizeSnakeCanvas() { const container = snakeCanvas.parentElement; const size = Math.min(container.clientWidth * 0.95, 400); tileCount = Math.floor(size / gridSize); snakeCanvas.width = tileCount * gridSize; snakeCanvas.height = tileCount * gridSize; }
-        window.addEventListener('resize', resizeSnakeCanvas);
-        function initSnakeGame() { resizeSnakeCanvas(); isGameOver = false; document.getElementById('start-game-btn').style.display = 'block'; document.getElementById('game-score').textContent = "Score: 0"; snake = [ {x: Math.floor(tileCount / 2), y: Math.floor(tileCount / 2)}, {x: Math.floor(tileCount / 2) - 1, y: Math.floor(tileCount / 2)}, {x: Math.floor(tileCount / 2) - 2, y: Math.floor(tileCount / 2)} ]; previousSnake = JSON.parse(JSON.stringify(snake)); score = 0; gameSpeed = 150; dx = 1; dy = 0; createFood(); drawInitialState(); }
+        const snakeCanvas = document.getElementById('snake-canvas'); const snakeCtx = snakeCanvas.getContext('2d'); let animationFrameId; let lastLogicUpdateTime = 0; let gameSpeed = 150; let gridSize = 20; let tileCount; let snake; let previousSnake; let food; let score; let dx, dy; let changingDirection; let isGameOver; function resizeSnakeCanvas() { const container = snakeCanvas.parentElement; const size = Math.min(container.clientWidth * 0.95, 400); tileCount = Math.floor(size / gridSize); snakeCanvas.width = tileCount * gridSize; snakeCanvas.height = tileCount * gridSize; }
+        window.addEventListener('resize', resizeSnakeCanvas); function initSnakeGame() { resizeSnakeCanvas(); isGameOver = false; document.getElementById('start-game-btn').style.display = 'block'; document.getElementById('game-score').textContent = "Score: 0"; snake = [ {x: Math.floor(tileCount / 2), y: Math.floor(tileCount / 2)}, {x: Math.floor(tileCount / 2) - 1, y: Math.floor(tileCount / 2)}, {x: Math.floor(tileCount / 2) - 2, y: Math.floor(tileCount / 2)} ]; previousSnake = JSON.parse(JSON.stringify(snake)); score = 0; gameSpeed = 150; dx = 1; dy = 0; createFood(); drawInitialState(); }
         function drawInitialState() { clearCanvas(); drawFood(); drawSnake(0); }
         function startSnakeGame() { if (animationFrameId) cancelAnimationFrame(animationFrameId); if (isGameOver) { initSnakeGame(); } isGameOver = false; document.getElementById('start-game-btn').style.display = 'none'; lastLogicUpdateTime = performance.now(); animationFrameId = requestAnimationFrame(gameLoop); }
         function stopSnakeGame() { if (animationFrameId) { cancelAnimationFrame(animationFrameId); animationFrameId = null; } }
@@ -259,159 +283,184 @@
         function randomTile(min = 0, max = tileCount - 1) { return Math.floor(Math.random() * (max - min + 1)) + min; }
         function createFood() { food = {x: randomTile(), y: randomTile()}; snake.forEach(function isFoodOnSnake(part) { if (part.x === food.x && part.y === food.y) createFood(); }); }
         function gameOver() { stopSnakeGame(); alert(`ゲームオーバー！\n最終スコア: ${score}`); document.getElementById('start-game-btn').style.display = 'block'; }
-        function changeDirection(event) { const LEFT_KEY = 37; const RIGHT_KEY = 39; const UP_KEY = 38; const DOWN_KEY = 40; if (changingDirection) return; changingDirection = true; const keyPressed = event.keyCode; const goingUp = dy === -1; const goingDown = dy === 1; const goingRight = dx === 1; const goingLeft = dx === -1; if (keyPressed === LEFT_KEY && !goingRight) { dx = -1; dy = 0; } if (keyPressed === UP_KEY && !goingDown) { dx = 0; dy = -1; } if (keyPressed === RIGHT_KEY && !goingLeft) { dx = 1; dy = 0; } if (keyPressed === DOWN_KEY && !goingUp) { dx = 0; dy = 1; } }
-        document.addEventListener('keydown', changeDirection);
-        let touchStartX = 0, touchStartY = 0;
-        snakeCanvas.addEventListener('touchstart', e => { e.preventDefault(); touchStartX = e.changedTouches[0].screenX; touchStartY = e.changedTouches[0].screenY; }, { passive: false });
-        snakeCanvas.addEventListener('touchend', e => { e.preventDefault(); let touchEndX = e.changedTouches[0].screenX; let touchEndY = e.changedTouches[0].screenY; handleSwipe(touchEndX, touchEndY); }, { passive: false });
+        document.addEventListener('keydown', changeDirection); let touchStartX = 0, touchStartY = 0; snakeCanvas.addEventListener('touchstart', e => { e.preventDefault(); touchStartX = e.changedTouches[0].screenX; touchStartY = e.changedTouches[0].screenY; }, { passive: false }); snakeCanvas.addEventListener('touchend', e => { e.preventDefault(); let touchEndX = e.changedTouches[0].screenX; let touchEndY = e.changedTouches[0].screenY; handleSwipe(touchEndX, touchEndY); }, { passive: false }); function changeDirection(event) { const LEFT_KEY = 37; const RIGHT_KEY = 39; const UP_KEY = 38; const DOWN_KEY = 40; if (changingDirection) return; changingDirection = true; const keyPressed = event.keyCode; const goingUp = dy === -1; const goingDown = dy === 1; const goingRight = dx === 1; const goingLeft = dx === -1; if (keyPressed === LEFT_KEY && !goingRight) { dx = -1; dy = 0; } if (keyPressed === UP_KEY && !goingDown) { dx = 0; dy = -1; } if (keyPressed === RIGHT_KEY && !goingLeft) { dx = 1; dy = 0; } if (keyPressed === DOWN_KEY && !goingUp) { dx = 0; dy = 1; } }
         function handleSwipe(touchEndX, touchEndY) { const dxSwipe = touchEndX - touchStartX; const dySwipe = touchEndY - touchStartY; if (changingDirection) return; const goingUp = dy === -1; const goingDown = dy === 1; const goingRight = dx === 1; const goingLeft = dx === -1; if (Math.abs(dxSwipe) > Math.abs(dySwipe)) { if (dxSwipe > 0 && !goingLeft) { dx = 1; dy = 0; changingDirection = true; } else if (dxSwipe < 0 && !goingRight) { dx = -1; dy = 0; changingDirection = true; } } else { if (dySwipe > 0 && !goingUp) { dx = 0; dy = 1; changingDirection = true; } else if (dySwipe < 0 && !goingDown) { dx = 0; dy = -1; changingDirection = true; } } }
         async function updateHighScore(score) { if (!loggedInUserId || !score) return; try { const userRef = db.collection('users').doc(loggedInUserId); const doc = await userRef.get(); if (doc.exists) { const currentHighScore = doc.data().pongHighScore || 0; if (score > currentHighScore) { await userRef.update({ pongHighScore: score }); } } } catch(error) { console.error("ハイスコア更新エラー:", error); } }
         
         // =======================================================
-        // ▼▼▼ Pixel Game Logic ▼▼▼
+        // ▼▼▼ Pixel Game Logic (10x10に修正) ▼▼▼
         // =======================================================
-        const pixelCanvas = document.getElementById('pixel-canvas');
-        const pixelCtx = pixelCanvas.getContext('2d');
-        const pixelStatusEl = document.getElementById('pixel-status');
-        const colorPalette = document.getElementById('color-palette');
-        let unsubscribePixels;
-        let canPlacePixelToday = false;
-        let selectedColor = 'FF0000';
-        const PIXEL_GRID_SIZE = 100;
+        const pixelCanvas = document.getElementById('pixel-canvas'); const pixelCtx = pixelCanvas.getContext('2d'); const pixelStatusEl = document.getElementById('pixel-status'); const colorPalette = document.getElementById('color-palette'); let unsubscribePixels; let canPlacePixelToday = false; let selectedColor = 'FF0000';
+        const PIXEL_GRID_SIZE = 10; // サイズを10に変更
+        function getTodayDateString() { const now = new Date(); const jstOffset = 9 * 60 * 60 * 1000; return new Date(now.getTime() + jstOffset).toISOString().split('T')[0]; }
+        function initPixelGame() { const container = pixelCanvas.parentElement; const size = Math.min(container.clientWidth * 0.95, 400); pixelCanvas.width = size; pixelCanvas.height = size; checkPixelAbility(); if (unsubscribePixels) unsubscribePixels(); unsubscribePixels = db.collection("canvas_pixels").onSnapshot(snapshot => { const pixels = {}; snapshot.forEach(doc => { pixels[doc.id] = doc.data().color; }); drawAllPixels(pixels); }); pixelCanvas.addEventListener('click', handlePixelCanvasClick); colorPalette.addEventListener('click', handleColorSelection); }
+        function stopPixelGame() { if (unsubscribePixels) { unsubscribePixels(); unsubscribePixels = null; } pixelCanvas.removeEventListener('click', handlePixelCanvasClick); colorPalette.removeEventListener('click', handleColorSelection); }
+        async function checkPixelAbility() { if (!loggedInUserId) return; pixelStatusEl.textContent = "ステータスを確認中..."; try { const userDoc = await db.collection('users').doc(loggedInUserId).get(); if (userDoc.exists) { const userData = userDoc.data(); const today = getTodayDateString(); if (userData.lastPixelPlacedDate === today) { canPlacePixelToday = false; pixelStatusEl.textContent = "今日の分はもう置きました。また明日！"; } else { canPlacePixelToday = true; pixelStatusEl.textContent = "好きな色を選んで、キャンバスをクリックしてください。"; } } } catch (error) { console.error("ユーザーデータ取得エラー:", error); pixelStatusEl.textContent = "エラーが発生しました。リロードしてください。"; } }
+        function drawAllPixels(pixels) { const pixelSize = pixelCanvas.width / PIXEL_GRID_SIZE; pixelCtx.fillStyle = '#FFFFFF'; pixelCtx.fillRect(0, 0, pixelCanvas.width, pixelCanvas.height); for (let y = 0; y < PIXEL_GRID_SIZE; y++) { for (let x = 0; x < PIXEL_GRID_SIZE; x++) { const docId = `${x}_${y}`; if (pixels[docId]) { pixelCtx.fillStyle = `#${pixels[docId]}`; pixelCtx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize); } } } }
+        function handleColorSelection(event) { if (event.target.classList.contains('color-choice')) { document.querySelectorAll('.color-choice').forEach(el => el.classList.remove('selected')); event.target.classList.add('selected'); selectedColor = event.target.dataset.color; } }
+        async function handlePixelCanvasClick(event) { if (!canPlacePixelToday) return; const rect = pixelCanvas.getBoundingClientRect(); const pixelSize = pixelCanvas.width / PIXEL_GRID_SIZE; const x = Math.floor((event.clientX - rect.left) / pixelSize); const y = Math.floor((event.clientY - rect.top) / pixelSize); if (x < 0 || x >= PIXEL_GRID_SIZE || y < 0 || y >= PIXEL_GRID_SIZE) return; const docId = `${x}_${y}`; const pixelData = { color: selectedColor, userId: loggedInUserId, timestamp: firebase.firestore.FieldValue.serverTimestamp() }; canPlacePixelToday = false; pixelStatusEl.textContent = "保存中..."; try { await db.collection('canvas_pixels').doc(docId).set(pixelData); await db.collection('users').doc(loggedInUserId).update({ lastPixelPlacedDate: getTodayDateString() }); pixelStatusEl.textContent = "ピクセルを置きました！続きはまた明日。"; } catch (error) { console.error("ピクセル保存エラー:", error); pixelStatusEl.textContent = "エラーが発生しました。もう一度試してください。"; canPlacePixelToday = true; } }
+        
+        // =======================================================
+        // ▼▼▼ Shiritori Game Logic ▼▼▼
+        // =======================================================
+        let unsubscribeShiritori;
+        const shiritoriTurnInfoEl = document.getElementById('shiritori-turn-info');
+        const shiritoriHistoryEl = document.getElementById('shiritori-history');
+        const shiritoriInput = document.getElementById('shiritori-input');
+        const shiritoriSubmitBtn = document.getElementById('shiritori-submit-btn');
 
-        function getTodayDateString() {
-            const now = new Date();
-            const jstOffset = 9 * 60 * 60 * 1000;
-            return new Date(now.getTime() + jstOffset).toISOString().split('T')[0];
-        }
-
-        function initPixelGame() {
-            const container = pixelCanvas.parentElement;
-            const size = Math.min(container.clientWidth * 0.95, 400);
-            pixelCanvas.width = size;
-            pixelCanvas.height = size;
-
-            checkPixelAbility();
-            
-            if (unsubscribePixels) unsubscribePixels();
-            unsubscribePixels = db.collection("canvas_pixels").onSnapshot(snapshot => {
-                const pixels = {};
-                snapshot.forEach(doc => { pixels[doc.id] = doc.data().color; });
-                drawAllPixels(pixels);
-            });
-
-            pixelCanvas.addEventListener('click', handlePixelCanvasClick);
-            colorPalette.addEventListener('click', handleColorSelection);
-        }
-
-        function stopPixelGame() {
-            if (unsubscribePixels) {
-                unsubscribePixels();
-                unsubscribePixels = null;
-            }
-            pixelCanvas.removeEventListener('click', handlePixelCanvasClick);
-            colorPalette.removeEventListener('click', handleColorSelection);
-        }
-
-        async function checkPixelAbility() {
-            if (!loggedInUserId) return;
-            pixelStatusEl.textContent = "ステータスを確認中...";
-            try {
-                const userDoc = await db.collection('users').doc(loggedInUserId).get();
-                if (userDoc.exists) {
-                    const userData = userDoc.data();
-                    const today = getTodayDateString();
-                    if (userData.lastPixelPlacedDate === today) {
-                        canPlacePixelToday = false;
-                        pixelStatusEl.textContent = "今日の分はもう置きました。また明日！";
-                    } else {
-                        canPlacePixelToday = true;
-                        pixelStatusEl.textContent = "好きな色を選んで、キャンバスをクリックしてください。";
-                    }
-                }
-            } catch (error) {
-                console.error("ユーザーデータ取得エラー:", error);
-                pixelStatusEl.textContent = "エラーが発生しました。リロードしてください。";
-            }
-        }
-
-        function drawAllPixels(pixels) {
-            const pixelSize = pixelCanvas.width / PIXEL_GRID_SIZE;
-            pixelCtx.fillStyle = '#FFFFFF';
-            pixelCtx.fillRect(0, 0, pixelCanvas.width, pixelCanvas.height);
-
-            for (let y = 0; y < PIXEL_GRID_SIZE; y++) {
-                for (let x = 0; x < PIXEL_GRID_SIZE; x++) {
-                    const docId = `${x}_${y}`;
-                    if (pixels[docId]) {
-                        pixelCtx.fillStyle = `#${pixels[docId]}`;
-                        pixelCtx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
-                    }
-                }
+        function stopShiritoriGame() {
+            if (unsubscribeShiritori) {
+                unsubscribeShiritori();
+                unsubscribeShiritori = null;
             }
         }
         
-        function handleColorSelection(event) {
-            if (event.target.classList.contains('color-choice')) {
-                document.querySelectorAll('.color-choice').forEach(el => el.classList.remove('selected'));
-                event.target.classList.add('selected');
-                selectedColor = event.target.dataset.color;
+        async function getUserName(userId) {
+            if (usersCache[userId]) return usersCache[userId];
+            try {
+                const userDoc = await db.collection('users').doc(userId).get();
+                if (userDoc.exists) {
+                    const name = userDoc.data().name;
+                    usersCache[userId] = name;
+                    return name;
+                }
+            } catch (error) { console.error("ユーザー名取得エラー:", error); }
+            return "不明なユーザー";
+        }
+        
+        function initShiritoriGame() {
+            if (!loggedInUserId) return;
+            const gameRef = db.collection('shiritori').doc('currentGame');
+            
+            unsubscribeShiritori = gameRef.onSnapshot(async (doc) => {
+                if (!doc.exists) {
+                    // ゲームがまだ始まっていない場合
+                    shiritoriTurnInfoEl.textContent = "まだしりとりが始まっていません。最初の言葉を入力してください！";
+                    shiritoriInput.disabled = false;
+                    shiritoriSubmitBtn.disabled = false;
+                    return;
+                }
+                const gameData = doc.data();
+                await renderShiritoriGame(gameData);
+            });
+        }
+        
+        async function renderShiritoriGame(gameData) {
+            const { words, currentPlayerId } = gameData;
+            shiritoriHistoryEl.innerHTML = '';
+            for (const entry of words) {
+                const userName = await getUserName(entry.userId);
+                const div = document.createElement('div');
+                div.classList.add('shiritori-word');
+                div.classList.add(entry.userId === loggedInUserId ? 'mine' : 'others');
+                div.innerHTML = `${sanitizeHTML(entry.word)} <small>${sanitizeHTML(userName)}</small>`;
+                shiritoriHistoryEl.appendChild(div);
+            }
+            shiritoriHistoryEl.scrollTop = shiritoriHistoryEl.scrollHeight;
+            
+            const lastWordEntry = words[words.length - 1];
+            const nextChar = getLastChar(lastWordEntry.word).nextChar;
+
+            const currentPlayerName = await getUserName(currentPlayerId);
+            if (currentPlayerId === loggedInUserId) {
+                shiritoriTurnInfoEl.innerHTML = `あなたのターンです！<br>「${nextChar}」から始まる言葉を入力してください。`;
+                shiritoriInput.disabled = false;
+                shiritoriSubmitBtn.disabled = false;
+            } else {
+                shiritoriTurnInfoEl.innerHTML = `現在 ${sanitizeHTML(currentPlayerName)} さんのターンです。<br>次の文字：「${nextChar}」`;
+                shiritoriInput.disabled = true;
+                shiritoriSubmitBtn.disabled = true;
             }
         }
+        
+        function getLastChar(word) {
+            let lastChar = word.slice(-1);
+            let nextChar = lastChar;
+            if (lastChar === 'ー') {
+                lastChar = word.slice(-2, -1);
+                nextChar = lastChar;
+            }
+            const smallToLarge = {'ぁ':'あ', 'ぃ':'い', 'ぅ':'う', 'ぇ':'え', 'ぉ':'お', 'っ':'つ', 'ゃ':'や', 'ゅ':'ゆ', 'ょ':'よ'};
+            if (smallToLarge[lastChar]) {
+                nextChar = smallToLarge[lastChar];
+            }
+            const voicedMap = {'じ':'ぢ', 'ず':'づ'};
+            if (voicedMap[nextChar]) {
+                return { lastChar, nextChar, altNextChar: voicedMap[nextChar] };
+            }
+            const voicedMapReverse = {'ぢ':'じ', 'づ':'ず'};
+            if (voicedMapReverse[nextChar]) {
+                return { lastChar, nextChar, altNextChar: voicedMapReverse[nextChar] };
+            }
+            return { lastChar, nextChar, altNextChar: null };
+        }
 
-        async function handlePixelCanvasClick(event) {
-            if (!canPlacePixelToday) return;
+        async function handleShiritoriSubmit() {
+            const word = shiritoriInput.value.trim();
+            if (!word) return;
 
-            const rect = pixelCanvas.getBoundingClientRect();
-            const pixelSize = pixelCanvas.width / PIXEL_GRID_SIZE;
-            const x = Math.floor((event.clientX - rect.left) / pixelSize);
-            const y = Math.floor((event.clientY - rect.top) / pixelSize);
-
-            if (x < 0 || x >= PIXEL_GRID_SIZE || y < 0 || y >= PIXEL_GRID_SIZE) return;
-
-            const docId = `${x}_${y}`;
-            const pixelData = {
-                color: selectedColor,
-                userId: loggedInUserId,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            };
-
-            canPlacePixelToday = false; // ダブルクリック防止
-            pixelStatusEl.textContent = "保存中...";
+            // バリデーション
+            if (!/^[ぁ-んー]+$/.test(word)) { alert("ひらがなで入力してください。"); return; }
+            if (word.slice(-1) === 'ん') { alert("「ん」で終わる言葉は使えません。"); return; }
+            
+            shiritoriSubmitBtn.disabled = true;
+            const gameRef = db.collection('shiritori').doc('currentGame');
 
             try {
-                await db.collection('canvas_pixels').doc(docId).set(pixelData);
-                await db.collection('users').doc(loggedInUserId).update({ lastPixelPlacedDate: getTodayDateString() });
-                
-                pixelStatusEl.textContent = "ピクセルを置きました！続きはまた明日。";
+                await db.runTransaction(async (transaction) => {
+                    const gameDoc = await transaction.get(gameRef);
+                    if (!gameDoc.exists) { // ゲーム初回
+                        const newWordEntry = { word, userId: loggedInUserId, timestamp: firebase.firestore.FieldValue.serverTimestamp() };
+                        transaction.set(gameRef, { 
+                            words: [newWordEntry],
+                            playerQueue: [loggedInUserId],
+                            currentPlayerId: loggedInUserId, // 初回は自分自身を次に指名
+                        });
+                        return;
+                    }
+
+                    const gameData = gameDoc.data();
+                    if (gameData.currentPlayerId !== loggedInUserId) { throw new Error("あなたのターンではありません。"); }
+                    if (gameData.words.some(e => e.word === word)) { throw new Error("その言葉は既に使用されています。"); }
+                    
+                    const lastWordEntry = gameData.words[gameData.words.length - 1];
+                    const { nextChar, altNextChar } = getLastChar(lastWordEntry.word);
+                    if (word.charAt(0) !== nextChar && word.charAt(0) !== altNextChar) {
+                        throw new Error(`「${nextChar}」から始まる言葉を入力してください。`);
+                    }
+
+                    const newWords = [...gameData.words, { word, userId: loggedInUserId, timestamp: firebase.firestore.FieldValue.serverTimestamp() }];
+                    
+                    let playerQueue = gameData.playerQueue || [];
+                    if (!playerQueue.includes(loggedInUserId)) playerQueue.push(loggedInUserId);
+                    const currentPlayerIndex = playerQueue.indexOf(gameData.currentPlayerId);
+                    const nextPlayerIndex = (currentPlayerIndex + 1) % playerQueue.length;
+                    const nextPlayerId = playerQueue[nextPlayerIndex];
+
+                    transaction.update(gameRef, {
+                        words: newWords,
+                        currentPlayerId: nextPlayerId,
+                        playerQueue: playerQueue
+                    });
+                });
+                shiritoriInput.value = '';
             } catch (error) {
-                console.error("ピクセル保存エラー:", error);
-                pixelStatusEl.textContent = "エラーが発生しました。もう一度試してください。";
-                canPlacePixelToday = true; // エラーなら再試行可能にする
+                alert(error.message);
+                console.error("しりとり更新エラー: ", error);
+            } finally {
+                // 自分のターンなら再度有効化
+                const doc = await gameRef.get();
+                if (doc.exists() && doc.data().currentPlayerId === loggedInUserId) {
+                    shiritoriSubmitBtn.disabled = false;
+                }
             }
         }
         
         // =======================================================
         // ▼▼▼ Other Functions ▼▼▼
         // =======================================================
-        async function handleBugReport() {
-            const reportContent = prompt("不具合の内容を具体的に入力してください。\n操作手順や発生状況などを詳しく教えていただけると助かります。");
-            if (reportContent && reportContent.trim() !== '') {
-                try {
-                    await db.collection('bug_reports').add({
-                        reporterId: loggedInUserId,
-                        report: reportContent.trim(),
-                        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                        userAgent: navigator.userAgent
-                    });
-                    alert('ご報告ありがとうございます。開発チームが内容を確認いたします。');
-                } catch (error) {
-                    console.error("不具合報告エラー:", error);
-                    alert('報告の送信に失敗しました。時間をおいて再度お試しください。');
-                }
-            }
-        }
-
+        async function handleBugReport() { const reportContent = prompt("不具合の内容を具体的に入力してください。\n操作手順や発生状況などを詳しく教えていただけると助かります。"); if (reportContent && reportContent.trim() !== '') { try { await db.collection('bug_reports').add({ reporterId: loggedInUserId, report: reportContent.trim(), timestamp: firebase.firestore.FieldValue.serverTimestamp(), userAgent: navigator.userAgent }); alert('ご報告ありがとうございます。開発チームが内容を確認いたします。'); } catch (error) { console.error("不具合報告エラー:", error); alert('報告の送信に失敗しました。時間をおいて再度お試しください。'); } } }
         async function renderRanking() { const rankingList = document.getElementById('ranking-list'); rankingList.innerHTML = "<p>ランキングを読み込み中...</p>"; try { const snapshot = await db.collection('users').orderBy('pongHighScore', 'desc').limit(50).get(); rankingList.innerHTML = ""; if (snapshot.empty) { rankingList.innerHTML = "<p>まだ誰もプレイしていません。</p>"; return; } let rank = 1; snapshot.forEach(doc => { const user = doc.data(); if (!user.pongHighScore) return; const imageUrl = user.photoURL || '/Deaikei/images/user (1).png'; rankingList.innerHTML += `<div class="ranking-item"><div class="ranking-rank">${rank}</div><img src="${imageUrl}" class="ranking-avatar"><div class="ranking-info"><h4>${sanitizeHTML(user.name)}</h4><p>${sanitizeHTML(user.faculty)}・${sanitizeHTML(user.grade)}</p></div><div class="ranking-score">${user.pongHighScore}</div></div>`; rank++; }); } catch (error) { console.error("ランキング取得エラー:", error); rankingList.innerHTML = "<p>ランキングの取得に失敗しました。</p>"; } }
         async function renderMatches() { if (!loggedInUserId) return; const matchList = document.getElementById('match-list'); matchList.innerHTML = "マッチング情報を読み込み中..."; try { const myDoc = await db.collection('users').doc(loggedInUserId).get(); const myBlockedUsers = (myDoc.data() || {}).blockedUsers || []; const myLikesSnapshot = await db.collection('likes').where('from', '==', loggedInUserId).get(); const likedByMe = myLikesSnapshot.docs.map(doc => doc.data().to); if (likedByMe.length === 0) { matchList.innerHTML = "まだマッチングした相手がいません。"; return; } const chunkedLikedByMe = []; for (let i = 0; i < likedByMe.length; i += 10) { chunkedLikedByMe.push(likedByMe.slice(i, i + 10)); } const matchedIds = []; for (const chunk of chunkedLikedByMe) { const likedMeBackSnapshot = await db.collection('likes').where('to', '==', loggedInUserId).where('from', 'in', chunk).get(); likedMeBackSnapshot.forEach(doc => matchedIds.push(doc.data().from)); } if (matchedIds.length === 0) { matchList.innerHTML = "まだマッチングした相手がいません。"; return; } const userPromises = matchedIds.map(id => db.collection('users').doc(id).get()); const userDocs = await Promise.all(userPromises); matchList.innerHTML = ""; userDocs.forEach(doc => { if (!doc.exists) return; const user = doc.data(); if (user.isBanned || myBlockedUsers.includes(user.uid) || (user.blockedUsers && user.blockedUsers.includes(loggedInUserId))) return; const imageUrl = user.photoURL || '/Deaikei/images/user (1).png'; const safeName = sanitizeHTML(user.name); const safeStudentId = sanitizeHTML(user.studentId || ''); const safeFaculty = sanitizeHTML(user.faculty); const safeGrade = sanitizeHTML(user.grade); matchList.innerHTML += `<div class="match-item" onclick="openChat('${user.uid}', '${user.name}', '${imageUrl}', '${user.studentId || ''}')"><img src="${imageUrl}" class="match-avatar"><div class="match-info"><h4>${safeName} <small>(${safeStudentId})</small></h4><p>${safeFaculty}・${safeGrade}</p></div><button class="match-user-action-btn" onclick="handleUserAction(event, '${user.uid}', '${user.name}')">•••</button></div>`; }); if (matchList.innerHTML === "") { matchList.innerHTML = "表示できるマッチング相手がいません。"; } } catch (error) { console.error("マッチングリスト取得エラー:", error); matchList.innerHTML = "情報の取得に失敗しました。"; } }
         async function handleUserAction(event, userId, userName) { if (event && typeof event.stopPropagation === 'function') { event.stopPropagation(); } const action = prompt(`'${userName}'さんへの操作を選択してください。\n1: ブロック\n2: 通報\n(数字を入力してください)`); if (action === '1') { blockUser(userId, userName); } else if (action === '2') { reportUser(userId, userName); } }
