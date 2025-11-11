@@ -12,7 +12,17 @@
         .screen.active { display: flex; }
         .app-container { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; overflow: hidden; }
         #card-stack { position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
-        .profile-card { position: absolute; width: 90vw; max-width: 380px; height: 75vh; max-height: 600px; background: var(--card-dark); border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; }
+        .profile-card { 
+            position: absolute; width: 90vw; max-width: 380px; height: 75vh; max-height: 600px; 
+            background: var(--card-dark); border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+            overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end;
+            /* ★★★ 修正点: アニメーション用の設定を追加 ★★★ */
+            transition: transform 0.4s ease, opacity 0.4s ease; 
+        }
+        /* ★★★ 修正点: カードがスワイプアウトするアニメーション用クラス ★★★ */
+        .profile-card.exit-nope { transform: translateX(-150%) rotate(-30deg); opacity: 0; }
+        .profile-card.exit-like { transform: translateX(150%) rotate(30deg); opacity: 0; }
+
         .profile-pic { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
         .profile-info { position: relative; z-index: 2; padding: 25px; background: linear-gradient(to top, rgba(0,0,0,0.95) 30%, transparent); }
         .profile-header { display: flex; justify-content: space-between; align-items: center; }
@@ -53,7 +63,12 @@
         .chat-back-btn { background: none; border: none; color: var(--text-light); margin-right: 10px; cursor: pointer; }
         .chat-header h2 { font-size: 1.2em; margin: 0; }
         .messages-container { flex-grow: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; }
-        .message-bubble { max-width: 70%; padding: 10px 15px; border-radius: 20px; margin-bottom: 10px; line-height: 1.4; }
+        .message-bubble { 
+            max-width: 70%; padding: 10px 15px; border-radius: 20px; 
+            margin-bottom: 10px; line-height: 1.4;
+            /* ★★★ 修正点: 長文でもレイアウトが崩れないようにする ★★★ */
+            word-break: break-word;
+        }
         .message-bubble.sent { background-color: var(--theme-pink); align-self: flex-end; }
         .message-bubble.received { background-color: #3e3e3e; align-self: flex-start; }
         .chat-input-area { display: flex; padding: 10px; background-color: var(--card-dark); border-top: 1px solid #333; }
@@ -104,6 +119,13 @@
         
         const avatarUrls = [ '/Deaikei/images/account.png', '/Deaikei/images/astronaut.png', '/Deaikei/images/bakeneko.png', '/Deaikei/images/cat.png', '/Deaikei/images/dog (1).png', '/Deaikei/images/dog.png', '/Deaikei/images/fish.png', '/Deaikei/images/kappa.png', '/Deaikei/images/man.png', '/Deaikei/images/meerkat.png', '/Deaikei/images/oni.png', '/Deaikei/images/student.png', '/Deaikei/images/tanuki.png', '/Deaikei/images/teenager (1).png', '/Deaikei/images/teenager (2).png', '/Deaikei/images/teenager.png', '/Deaikei/images/turtle.png', '/Deaikei/images/user (1).png', '/Deaikei/images/user.png', '/Deaikei/images/woman.png' ];
 
+        // ★★★ 修正点: HTMLを安全に表示するためのサニタイズ関数 ★★★
+        const sanitizeHTML = (str) => {
+            const temp = document.createElement('div');
+            temp.textContent = str;
+            return temp.innerHTML;
+        };
+
         function showTab(screenId) {
             if (unsubscribeChat) { unsubscribeChat(); unsubscribeChat = null; }
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -119,6 +141,7 @@
             if (screenId === 'profile-screen') renderProfileEditor();
         }
 
+        // ★★★ 修正点: プロフィール登録後にメイン画面へ遷移させる ★★★
         async function handleProfileSetup() {
             const name = document.getElementById('register-name').value.trim();
             if (!name) { alert('ニックネームは必須です。'); return; }
@@ -128,6 +151,10 @@
             if (!user) return;
             const studentId = user.email.split('@')[0];
             await db.collection('users').doc(user.uid).set({ uid: user.uid, studentId: studentId, name: name, photoURL: avatarUrl, faculty: document.getElementById('register-faculty').value, grade: document.getElementById('register-grade').value, interests: [] });
+            
+            // 登録完了後にカード情報を読み込んでメイン画面を表示
+            await loadUsersForCards();
+            showTab('main-screen');
         }
         
         function renderCurrentCard() {
@@ -141,10 +168,16 @@
             actions.style.display = 'flex';
             const user = allUsers[currentUserIndex];
             const imageUrl = user.photoURL || '/Deaikei/images/user (1).png';
-            stack.innerHTML = `<div class="profile-card" data-user-id="${user.uid}"><img src="${imageUrl}" class="profile-pic"><div class="profile-info"><div class="profile-header"><h3>${user.name} <small>(${user.studentId || ''})</small></h3><button class="report-btn" onclick="reportUser('${user.uid}', '${user.name}')">•••</button></div><p>${user.faculty}・${user.grade}</p><div class="profile-tags">${(user.interests || []).map(tag => `<div class="profile-tag">${tag}</div>`).join('')}</div></div></div>`;
+            // ユーザー情報をサニタイズしてから表示
+            const safeName = sanitizeHTML(user.name);
+            const safeStudentId = sanitizeHTML(user.studentId || '');
+            const safeFaculty = sanitizeHTML(user.faculty);
+            const safeGrade = sanitizeHTML(user.grade);
+            const tagsHTML = (user.interests || []).map(tag => `<div class="profile-tag">${sanitizeHTML(tag)}</div>`).join('');
+
+            stack.innerHTML = `<div class="profile-card" data-user-id="${user.uid}"><img src="${imageUrl}" class="profile-pic"><div class="profile-info"><div class="profile-header"><h3>${safeName} <small>(${safeStudentId})</small></h3><button class="report-btn" onclick="reportUser('${user.uid}', '${user.name}')">•••</button></div><p>${safeFaculty}・${safeGrade}</p><div class="profile-tags">${tagsHTML}</div></div></div>`;
         }
 
-        // ★★★ 修正点1: データベースへのクエリをシンプルに戻す ★★★
         async function renderMatches() {
             if (!loggedInUserId) return;
             const matchList = document.getElementById('match-list');
@@ -166,7 +199,6 @@
                 const userPromises = [];
                 for (let i = 0; i < matchedIds.length; i += 10) {
                     const chunk = matchedIds.slice(i, i + 10);
-                    // isBannedの条件を削除し、シンプルなクエリに戻す
                     const q = db.collection('users').where('uid', 'in', chunk);
                     userPromises.push(q.get());
                 }
@@ -175,12 +207,16 @@
                 userSnapshots.forEach(snapshot => {
                     snapshot.forEach(doc => {
                         const user = doc.data();
-                        // データを取得した「後」で、BANされているユーザーを除外する
                         if (user.isBanned === true) { return; }
-
-                        if (!user || !user.uid || !user.name) { console.warn("必要情報が欠けているユーザーデータが見つかりました。スキップします:", user); return; }
+                        if (!user || !user.uid || !user.name) { return; }
                         const imageUrl = user.photoURL || '/Deaikei/images/user (1).png';
-                        matchList.innerHTML += `<div class="match-item" onclick="openChat('${user.uid}', '${user.name}', '${imageUrl}', '${user.studentId || ''}')"><img src="${imageUrl}" class="match-avatar"><div class="match-info"><h4>${user.name} <small>(${user.studentId || ''})</small></h4><p>${user.faculty}・${user.grade}</p></div><button class="match-report-btn" onclick="reportUserFromMatchList(event, '${user.uid}', '${user.name}')">•••</button></div>`;
+                        // ユーザー情報をサニタイズしてから表示
+                        const safeName = sanitizeHTML(user.name);
+                        const safeStudentId = sanitizeHTML(user.studentId || '');
+                        const safeFaculty = sanitizeHTML(user.faculty);
+                        const safeGrade = sanitizeHTML(user.grade);
+
+                        matchList.innerHTML += `<div class="match-item" onclick="openChat('${user.uid}', '${user.name}', '${imageUrl}', '${user.studentId || ''}')"><img src="${imageUrl}" class="match-avatar"><div class="match-info"><h4>${safeName} <small>(${safeStudentId})</small></h4><p>${safeFaculty}・${safeGrade}</p></div><button class="match-report-btn" onclick="reportUserFromMatchList(event, '${user.uid}', '${user.name}')">•••</button></div>`;
                     });
                 });
                 if (matchList.innerHTML === "") { matchList.innerHTML = "表示できるマッチング相手がいません。"; }
@@ -190,7 +226,7 @@
         function openChat(targetUserId, targetUserName, targetUserPhotoURL, targetUserStudentId) {
             if (!loggedInUserId || !targetUserId) { alert("エラー: ユーザー情報が不完全なため、チャットを開始できません。ページを再読み込みしてください。"); return; }
             currentChatRoomId = [loggedInUserId, targetUserId].sort().join('_');
-            document.getElementById('chat-partner-name').textContent = `${targetUserName} (${targetUserStudentId || ''})`;
+            document.getElementById('chat-partner-name').textContent = `${sanitizeHTML(targetUserName)} (${sanitizeHTML(targetUserStudentId || '')})`;
             showTab('chat-screen');
             renderMessages(currentChatRoomId);
         }
@@ -205,7 +241,7 @@
                     const msg = doc.data();
                     const bubble = document.createElement('div');
                     bubble.className = 'message-bubble';
-                    bubble.textContent = msg.text;
+                    bubble.textContent = msg.text; // textContent is automatically sanitized by the browser
                     if (msg.senderId === loggedInUserId) { bubble.classList.add('sent'); } else { bubble.classList.add('received'); }
                     messagesContainer.appendChild(bubble);
                 });
@@ -233,7 +269,6 @@
                     if (!userData.studentId && user.email) {
                         const studentId = user.email.split('@')[0];
                         await db.collection('users').doc(user.uid).update({ studentId: studentId });
-                        console.log(`古いユーザーデータ(UID: ${user.uid})にstudentIdを補完しました。`);
                     }
                     loggedInUserId = user.uid; 
                     await loadUsersForCards(); 
@@ -252,44 +287,59 @@
         function renderAvatarSelectionGrid(gridId, currentAvatarUrl = null) { const grid = document.getElementById(gridId); grid.innerHTML = ''; avatarUrls.forEach(url => { const img = document.createElement('img'); img.src = url; img.className = 'avatar-option'; img.dataset.url = url; if (url === currentAvatarUrl) { img.classList.add('selected'); } img.onclick = () => { document.querySelectorAll(`#${gridId} .avatar-option`).forEach(el => el.classList.remove('selected')); img.classList.add('selected'); }; grid.appendChild(img); }); }
         async function handleDeleteAccount() { const user = auth.currentUser; if (!user) return; if (!confirm("本当にアカウントを削除しますか？この操作は取り消せません。")) return; try { await db.collection('users').doc(user.uid).delete(); const myLikes = await db.collection('likes').where('from', '==', user.uid).get(); for(const doc of myLikes.docs) await doc.ref.delete(); const likedBy = await db.collection('likes').where('to', '==', user.uid).get(); for(const doc of likedBy.docs) await doc.ref.delete(); await user.delete(); alert('アカウントが削除されました。'); } catch (e) { console.error("アカウント削除エラー:", e); alert('アカウントの削除に失敗しました。再ログインが必要な場合があります。'); } }
         
-        // ★★★ 修正点2: データベースへのクエリをシンプルに戻し、アプリ側でフィルタリング ★★★
         async function loadUsersForCards() {
             if (!loggedInUserId) return;
+            const stack = document.getElementById('card-stack');
+            stack.innerHTML = "<p>ユーザーを探しています...</p>"; // ローディング表示
             try {
                 const myLikesSnapshot = await db.collection('likes').where('from', '==', loggedInUserId).get();
                 const swipedUserIds = myLikesSnapshot.docs.map(doc => doc.data().to);
-                
-                // isBannedの条件を削除し、全ユーザーを取得
                 const usersSnapshot = await db.collection('users').get();
-                
-                allUsers = usersSnapshot.docs
-                    .map(doc => doc.data())
-                    // データを取得した「後」で、BANされているユーザーなどを除外する
-                    .filter(user => user.isBanned !== true && user.uid !== loggedInUserId && !swipedUserIds.includes(user.uid));
-                
+                allUsers = usersSnapshot.docs.map(doc => doc.data()).filter(user => user.isBanned !== true && user.uid !== loggedInUserId && !swipedUserIds.includes(user.uid));
                 currentUserIndex = 0;
                 renderCurrentCard();
-            } catch (error) { console.error("ユーザーの読み込みに失敗しました:", error); }
+            } catch (error) { console.error("ユーザーの読み込みに失敗しました:", error); stack.innerHTML = "<p>ユーザー情報の取得に失敗しました。</p>"; }
         }
         
+        // ★★★ 修正点: アニメーションを考慮した処理に変更 ★★★
         function handleNope() {
             if (currentUserIndex >= allUsers.length) return;
-            currentUserIndex++;
-            renderCurrentCard();
+            const card = document.querySelector('.profile-card');
+            if (card) {
+                card.classList.add('exit-nope');
+                setTimeout(() => {
+                    currentUserIndex++;
+                    renderCurrentCard();
+                }, 400); // アニメーションの時間と合わせる
+            }
         }
         
         async function handleLikeClick() {
             if (currentUserIndex >= allUsers.length || !loggedInUserId) return;
-            const targetUser = allUsers[currentUserIndex];
-            if (!targetUser || !targetUser.uid) { console.error("ターゲットユーザーのUIDが不正です:", targetUser); return; }
-            try {
-                await db.collection('likes').add({ from: loggedInUserId, to: targetUser.uid });
-                const query = db.collection('likes').where('from', '==', targetUser.uid).where('to', '==', loggedInUserId);
-                const result = await query.get();
-                if (!result.empty) { alert(`🎉 ${targetUser.name}さんとマッチングしました！`); }
-                currentUserIndex++;
-                renderCurrentCard();
-            } catch (error) { console.error("Like処理でエラーが発生しました:", error); }
+            const card = document.querySelector('.profile-card');
+            if (card) {
+                card.classList.add('exit-like');
+                const targetUser = allUsers[currentUserIndex];
+                if (!targetUser || !targetUser.uid) { console.error("ターゲットユーザーのUIDが不正です:", targetUser); return; }
+                try {
+                    await db.collection('likes').add({ from: loggedInUserId, to: targetUser.uid });
+                    const result = await db.collection('likes').where('from', '==', targetUser.uid).where('to', '==', loggedInUserId).get();
+                    if (!result.empty) {
+                        alert(`🎉 ${targetUser.name}さんとマッチングしました！`);
+                    }
+                    setTimeout(() => {
+                        currentUserIndex++;
+                        renderCurrentCard();
+                    }, 400); // アニメーションの時間と合わせる
+                } catch (error) { 
+                    console.error("Like処理でエラーが発生しました:", error); 
+                    // エラーが起きても次のカードに進む
+                    setTimeout(() => {
+                        currentUserIndex++;
+                        renderCurrentCard();
+                    }, 400);
+                }
+            }
         }
 
         async function reportUser(userId, userName) {
@@ -321,7 +371,7 @@
                 const displayTags = [...new Set([...allInterests, ...myInterests])];
                 interestsEditor.innerHTML = ''; 
                 displayTags.forEach(interest => { 
-                    interestsEditor.innerHTML += `<label style="display: inline-block; margin: 5px;"><input type="checkbox" value="${interest}" ${myInterests.includes(interest) ? 'checked' : ''}> ${interest}</label>`; 
+                    interestsEditor.innerHTML += `<label style="display: inline-block; margin: 5px;"><input type="checkbox" value="${sanitizeHTML(interest)}" ${myInterests.includes(interest) ? 'checked' : ''}> ${sanitizeHTML(interest)}</label>`; 
                 }); 
                 renderAvatarSelectionGrid('avatar-edit-grid', userData.photoURL); 
             }).catch(error => console.error("プロフィール情報の読み込みエラー:", error));
