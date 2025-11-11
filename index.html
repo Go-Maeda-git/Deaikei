@@ -38,15 +38,9 @@
         .profile-info p { font-size: 18px; margin: 5px 0 10px; color: var(--text-muted); }
         .profile-tags { display: flex; flex-wrap: wrap; gap: 8px; }
         .profile-tag { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(5px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 15px; padding: 5px 12px; font-size: 14px; }
-        
-        /* ★★★ 機能追加: 「今日のひとこと」表示用スタイル ★★★ */
-        .daily-topic-area {
-            background: rgba(255, 255, 255, 0.05); border-left: 3px solid var(--theme-pink);
-            border-radius: 8px; padding: 12px; margin-top: 15px;
-        }
+        .daily-topic-area { background: rgba(255, 255, 255, 0.05); border-left: 3px solid var(--theme-pink); border-radius: 8px; padding: 12px; margin-top: 15px; }
         .daily-topic-area .question { font-size: 12px; color: var(--text-muted); margin-bottom: 5px; }
         .daily-topic-area .answer { font-size: 15px; color: var(--text-light); }
-
         .actions { display: flex; justify-content: space-evenly; align-items: center; padding: 15px 0; }
         .action-btn { background: var(--card-dark); border: 1px solid #444; border-radius: 50%; width: 70px; height: 70px; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: transform 0.2s; }
         .action-btn:hover { transform: scale(1.1); }
@@ -54,7 +48,7 @@
         .nope svg { stroke: #FD5068; }
         .like svg { stroke: #2DB97B; }
         #no-more-cards { text-align: center; color: var(--text-muted); padding: 20px; }
-        .user-action-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 5px; } /* 通報/ブロックボタン */
+        .user-action-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 5px; }
         nav { width: 100%; background: var(--card-dark); display: flex; justify-content: space-around; padding: 5px 0; border-top: 1px solid #333; }
         nav button { background: none; border: none; cursor: pointer; color: #777; padding: 10px; }
         nav button.active { color: var(--theme-pink); }
@@ -120,7 +114,9 @@
         let currentChatRoomId = null, unsubscribeChat = null;
         let userInterestsCache = [];
 
-        // ★★★ 機能追加: 「今日のひとこと」用のお題リスト ★★★
+        // ★★★ 修正点: avatarUrlsの定義をここに追加 ★★★
+        const avatarUrls = [ '/Deaikei/images/account.png', '/Deaikei/images/astronaut.png', '/Deaikei/images/bakeneko.png', '/Deaikei/images/cat.png', '/Deaikei/images/dog (1).png', '/Deaikei/images/dog.png', '/Deaikei/images/fish.png', '/Deaikei/images/kappa.png', '/Deaikei/images/man.png', '/Deaikei/images/meerkat.png', '/Deaikei/images/oni.png', '/Deaikei/images/student.png', '/Deaikei/images/tanuki.png', '/Deaikei/images/teenager (1).png', '/Deaikei/images/teenager (2).png', '/Deaikei/images/teenager.png', '/Deaikei/images/turtle.png', '/Deaikei/images/user (1).png', '/Deaikei/images/user.png', '/Deaikei/images/woman.png' ];
+
         const dailyTopics = ["今一番ハマっていることは？", "おすすめの学食メニューは？", "最近見た面白い動画やアニメは？", "週末は何して過ごすことが多い？", "得意な科目・苦手な科目は？", "もし1日だけ誰かになれるとしたら誰になる？", "好きな音楽のジャンルやアーティストは？", "人生で一番笑ったエピソードは？", "卒業したらやってみたいことは？", "学校の近くでおすすめの場所は？"];
         const getDailyTopic = () => {
             const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
@@ -160,18 +156,16 @@
                 const myDoc = await db.collection('users').doc(loggedInUserId).get();
                 const myData = myDoc.data() || {};
                 const myBlockedUsers = myData.blockedUsers || [];
-                
                 const myLikesSnapshot = await db.collection('likes').where('from', '==', loggedInUserId).get();
                 const swipedUserIds = myLikesSnapshot.docs.map(doc => doc.data().to);
-                swipedUserIds.push(...myBlockedUsers); // ブロックしたユーザーもスワイプ済み扱い
-                
+                swipedUserIds.push(...myBlockedUsers);
                 const usersSnapshot = await db.collection('users').get();
                 allUsers = usersSnapshot.docs.map(doc => doc.data())
                     .filter(user => 
-                        user.uid !== loggedInUserId && // 自分自身ではない
-                        !user.isBanned && // BANされていない
-                        !swipedUserIds.includes(user.uid) && // 自分がスワイプ/ブロックしていない
-                        !(user.blockedUsers && user.blockedUsers.includes(loggedInUserId)) // 相手にブロックされていない
+                        user.uid !== loggedInUserId &&
+                        !user.isBanned &&
+                        !swipedUserIds.includes(user.uid) &&
+                        !(user.blockedUsers && user.blockedUsers.includes(loggedInUserId))
                     );
                 currentUserIndex = 0;
                 renderCurrentCard();
@@ -194,49 +188,41 @@
             const safeFaculty = sanitizeHTML(user.faculty);
             const safeGrade = sanitizeHTML(user.grade);
             const tagsHTML = (user.interests || []).map(tag => `<div class="profile-tag">${sanitizeHTML(tag)}</div>`).join('');
-
-            // ★★★ 機能追加: 「今日のひとこと」の表示ロジック ★★★
             let dailyTopicHTML = '';
             if (user.dailyAnswer && user.dailyTopicQuestion) {
-                dailyTopicHTML = `
-                    <div class="daily-topic-area">
-                        <div class="question">${sanitizeHTML(user.dailyTopicQuestion)}</div>
-                        <div class="answer">${sanitizeHTML(user.dailyAnswer)}</div>
-                    </div>`;
+                dailyTopicHTML = `<div class="daily-topic-area"><div class="question">${sanitizeHTML(user.dailyTopicQuestion)}</div><div class="answer">${sanitizeHTML(user.dailyAnswer)}</div></div>`;
             }
-
-            stack.innerHTML = `
-                <div class="profile-card" data-user-id="${user.uid}">
-                    <img src="${imageUrl}" class="profile-pic">
-                    <div class="profile-info">
-                        <div class="profile-header">
-                            <h3>${safeName} <small>(${safeStudentId})</small></h3>
-                            <button class="user-action-btn" onclick="handleUserAction('${user.uid}', '${user.name}')">•••</button>
-                        </div>
-                        <p>${safeFaculty}・${safeGrade}</p>
-                        <div class="profile-tags">${tagsHTML}</div>
-                        ${dailyTopicHTML}
-                    </div>
-                </div>`;
+            stack.innerHTML = `<div class="profile-card" data-user-id="${user.uid}"><img src="${imageUrl}" class="profile-pic"><div class="profile-info"><div class="profile-header"><h3>${safeName} <small>(${safeStudentId})</small></h3><button class="user-action-btn" onclick="handleUserAction('${user.uid}', '${user.name}')">•••</button></div><p>${safeFaculty}・${safeGrade}</p><div class="profile-tags">${tagsHTML}</div>${dailyTopicHTML}</div></div>`;
         }
         
-        // (handleLikeClick, handleNope などの主要ロジックは変更なし)
+        // ★★★ 修正点: Nope時のDB書き込みを削除 ★★★
         async function handleNope() {
             if (currentUserIndex >= allUsers.length) return;
             const card = document.querySelector('.profile-card');
             if (card) {
                 card.classList.add('exit-nope');
-                const targetUser = allUsers[currentUserIndex];
-                await db.collection('likes').add({ from: loggedInUserId, to: targetUser.uid, type: 'nope' });
+                // DBへの書き込みは行わず、単に次に進む
                 setTimeout(() => { currentUserIndex++; renderCurrentCard(); }, 400);
             }
         }
+        
+        // ★★★ 修正点: Like時のデータチェックを強化 ★★★
         async function handleLikeClick() {
             if (currentUserIndex >= allUsers.length || !loggedInUserId) return;
+            
+            const targetUser = allUsers[currentUserIndex];
+            // 相手のユーザー情報が不正な場合は処理を中断
+            if (!targetUser || !targetUser.uid) {
+                console.error("Invalid target user data:", targetUser);
+                // 次のカードへ進む
+                currentUserIndex++;
+                renderCurrentCard();
+                return;
+            }
+
             const card = document.querySelector('.profile-card');
             if (card) {
                 card.classList.add('exit-like');
-                const targetUser = allUsers[currentUserIndex];
                 try {
                     await db.collection('likes').add({ from: loggedInUserId, to: targetUser.uid });
                     const result = await db.collection('likes').where('from', '==', targetUser.uid).where('to', '==', loggedInUserId).get();
@@ -250,14 +236,12 @@
         }
         
         async function renderMatches() {
-            // (ブロック機能との連携のため、フィルタリングを強化)
             if (!loggedInUserId) return;
             const matchList = document.getElementById('match-list');
             matchList.innerHTML = "マッチング情報を読み込んでいます...";
             try {
                 const myDoc = await db.collection('users').doc(loggedInUserId).get();
                 const myBlockedUsers = (myDoc.data() || {}).blockedUsers || [];
-                // ... (以前のrenderMatchesロジック) ...
                 const myLikesSnapshot = await db.collection('likes').where('from', '==', loggedInUserId).get();
                 const likedByMe = myLikesSnapshot.docs.map(doc => doc.data().to);
                 if (likedByMe.length === 0) { matchList.innerHTML = "まだマッチングした相手がいません。"; return; }
@@ -274,68 +258,43 @@
                 userDocs.forEach(doc => {
                     if (!doc.exists) return;
                     const user = doc.data();
-                    // ★★★ 機能追加: ブロックした/された相手は一覧に表示しない ★★★
                     if (user.isBanned || myBlockedUsers.includes(user.uid) || (user.blockedUsers && user.blockedUsers.includes(loggedInUserId))) return;
-                    
                     const imageUrl = user.photoURL || '/Deaikei/images/user (1).png';
                     const safeName = sanitizeHTML(user.name);
                     const safeStudentId = sanitizeHTML(user.studentId || '');
                     const safeFaculty = sanitizeHTML(user.faculty);
                     const safeGrade = sanitizeHTML(user.grade);
-
                     matchList.innerHTML += `<div class="match-item" onclick="openChat('${user.uid}', '${user.name}', '${imageUrl}', '${user.studentId || ''}')"><img src="${imageUrl}" class="match-avatar"><div class="match-info"><h4>${safeName} <small>(${safeStudentId})</small></h4><p>${safeFaculty}・${safeGrade}</p></div><button class="match-user-action-btn" onclick="handleUserAction(event, '${user.uid}', '${user.name}')">•••</button></div>`;
                 });
                 if (matchList.innerHTML === "") { matchList.innerHTML = "表示できるマッチング相手がいません。"; }
             } catch (error) { console.error("マッチングリスト取得エラー:", error); matchList.innerHTML = "情報の取得に失敗しました。"; }
         }
 
-        // ★★★ 機能追加: 通報とブロックを選択させる統合関数 ★★★
         async function handleUserAction(event, userId, userName) {
-            // マッチングリストからの呼び出しの場合、チャット画面への遷移を防ぐ
-            if (event && typeof event.stopPropagation === 'function') {
-                event.stopPropagation();
-            }
+            if (event && typeof event.stopPropagation === 'function') { event.stopPropagation(); }
             const action = prompt(`'${userName}'さんへの操作を選択してください。\n1: ブロック\n2: 通報\n(数字を入力してください)`);
-            if (action === '1') {
-                blockUser(userId, userName);
-            } else if (action === '2') {
-                reportUser(userId, userName);
-            }
+            if (action === '1') { blockUser(userId, userName); } 
+            else if (action === '2') { reportUser(userId, userName); }
         }
         
         async function blockUser(userId, userName) {
-            if (!confirm(`'${userName}'さんをブロックしますか？\nブロックすると、お互いの画面に二度と表示されなくなります。この操作は取り消せません。`)) return;
+            if (!confirm(`'${userName}'さんをブロックしますか？\nブロックすると、お互いの画面に二度と表示されなくなります。`)) return;
             try {
-                const userRef = db.collection('users').doc(loggedInUserId);
-                await userRef.update({
-                    blockedUsers: firebase.firestore.FieldValue.arrayUnion(userId)
-                });
+                await db.collection('users').doc(loggedInUserId).update({ blockedUsers: firebase.firestore.FieldValue.arrayUnion(userId) });
                 alert(`'${userName}'さんをブロックしました。`);
-                // 現在のカードを非表示にし、次のカードを表示
                 const card = document.querySelector('.profile-card');
-                if (card && card.dataset.userId === userId) {
-                    handleNope(); 
-                }
-                // マッチングリストを再描画
-                if (document.getElementById('matches-screen').classList.contains('active')) {
-                    renderMatches();
-                }
-            } catch (error) {
-                console.error("ブロック処理エラー:", error);
-                alert("ブロックに失敗しました。");
-            }
+                if (card && card.dataset.userId === userId) { handleNope(); }
+                if (document.getElementById('matches-screen').classList.contains('active')) { renderMatches(); }
+            } catch (error) { console.error("ブロック処理エラー:", error); alert("ブロックに失敗しました。"); }
         }
 
         async function reportUser(userId, userName) {
-            const reason = prompt(`'${userName}'さんを通報します。理由を入力してください。(例: 不適切なプロフィール)`);
+            const reason = prompt(`'${userName}'さんを通報します。理由を入力してください。`);
             if (reason && reason.trim() !== '') {
                 await db.collection('reports').add({ reportedUserId: userId, reporterId: loggedInUserId, reason: reason, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
                 alert('通報が送信されました。ご協力ありがとうございます。');
-                // 通報後、相手を自動で非表示にする
                 const card = document.querySelector('.profile-card');
-                if (card && card.dataset.userId === userId) {
-                    handleNope();
-                }
+                if (card && card.dataset.userId === userId) { handleNope(); }
             }
         }
         
@@ -345,42 +304,32 @@
             const dailyTopicQuestionEl = document.getElementById('daily-topic-question-editor');
             const dailyTopicAnswerInput = document.getElementById('daily-topic-answer-input');
             editor.innerHTML = "<p>情報を読み込み中...</p>";
-
             const doc = await db.collection('users').doc(loggedInUserId).get();
             if (!doc.exists) return;
-
             const userData = doc.data();
             userInterestsCache = userData.interests || [];
             renderInterestTags(editor, userInterestsCache);
             renderAvatarSelectionGrid('avatar-edit-grid', userData.photoURL);
-
-            // ★★★ 機能追加: 「今日のひとこと」エディタの表示 ★★★
             const topic = getDailyTopic();
             dailyTopicQuestionEl.textContent = topic;
             if (userData.dailyTopicQuestion === topic) {
                 dailyTopicAnswerInput.value = userData.dailyAnswer || '';
             } else {
-                dailyTopicAnswerInput.value = ''; // お題が変わっていたらリセット
+                dailyTopicAnswerInput.value = '';
             }
         }
 
-        // ★★★ 機能追加: 「今日のひとこと」更新処理 ★★★
         async function updateDailyAnswer() {
             if (!loggedInUserId) return;
             const question = getDailyTopic();
             const answer = document.getElementById('daily-topic-answer-input').value.trim();
             try {
-                await db.collection('users').doc(loggedInUserId).update({
-                    dailyTopicQuestion: question,
-                    dailyAnswer: answer
-                });
+                await db.collection('users').doc(loggedInUserId).update({ dailyTopicQuestion: question, dailyAnswer: answer });
                 alert('「今日のひとこと」を更新しました！');
-            } catch (error) {
-                alert("更新に失敗しました: " + error.message);
-            }
+            } catch (error) { alert("更新に失敗しました: " + error.message); }
         }
         
-        // (その他、変更のないヘルパー関数群)
+        // (その他ヘルパー関数)
         async function handleProfileSetup() { const name = document.getElementById('register-name').value.trim(); if (!name) { alert('ニックネームは必須です。'); return; } const selectedAvatar = document.querySelector('#avatar-selection-grid .avatar-option.selected'); let avatarUrl = selectedAvatar ? selectedAvatar.dataset.url : '/Deaikei/images/user (1).png'; const user = auth.currentUser; if (!user) return; const studentId = user.email.split('@')[0]; const profileData = { uid: user.uid, studentId: studentId, name: name, photoURL: avatarUrl, faculty: document.getElementById('register-faculty').value, grade: document.getElementById('register-grade').value, interests: [], isBanned: false, blockedUsers: [] }; await db.collection('users').doc(user.uid).set(profileData); await loadUsersForCards(); showTab('main-screen'); }
         function openChat(targetUserId, targetUserName, targetUserPhotoURL, targetUserStudentId) { if (!loggedInUserId || !targetUserId) return; currentChatRoomId = [loggedInUserId, targetUserId].sort().join('_'); document.getElementById('chat-partner-name').textContent = `${sanitizeHTML(targetUserName)} (${sanitizeHTML(targetUserStudentId || '')})`; showTab('chat-screen'); const messagesContainer = document.getElementById('messages-container'); messagesContainer.innerHTML = ''; const q = db.collection('chats').doc(currentChatRoomId).collection('messages').orderBy('timestamp', 'asc'); unsubscribeChat = q.onSnapshot(snapshot => { messagesContainer.innerHTML = ''; snapshot.forEach(doc => { const msg = doc.data(); const bubble = document.createElement('div'); bubble.className = 'message-bubble'; bubble.textContent = msg.text; if (msg.senderId === loggedInUserId) { bubble.classList.add('sent'); } else { bubble.classList.add('received'); } messagesContainer.appendChild(bubble); }); messagesContainer.scrollTop = messagesContainer.scrollHeight; }, error => { console.error("メッセージ受信エラー:", error); }); }
         async function sendMessage() { const input = document.getElementById('chat-input'); const text = input.value.trim(); if (text === '' || !currentChatRoomId || !loggedInUserId) return; const tempText = text; input.value = ''; try { await db.collection('chats').doc(currentChatRoomId).collection('messages').add({ text: tempText, senderId: loggedInUserId, timestamp: firebase.firestore.FieldValue.serverTimestamp() }); } catch (error) { console.error("メッセージ送信エラー:", error); alert("メッセージの送信に失敗しました。"); input.value = tempText; } }
