@@ -180,10 +180,14 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script>
-        const firebaseConfig = { apiKey: "AIzaSyAcKf5BrhFFkv74WdaamqnrCY1qSRxsVjE", authDomain: "deaikei-kosen.firebaseapp.com", projectId: "deaikei-kosen", storageBucket: "deaikei-kosen.firebasestorage.app", messagingSenderId: "166298285211", appId: "1:166298285211:web:5381e5e419754e0376c23e" };
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
+        const firebaseConfig = {
+    apiKey: "AIzaSyBKR_dHG9hHY83QUGTFZCdumovZ44MUMYg", // ★★★ 必ず新しいキーに差し替えてください ★★★
+    authDomain: "deaikei-kosen.firebaseapp.com",
+    projectId: "deaikei-kosen",
+    storageBucket: "deaikei-kosen.firebasestorage.app",
+    messagingSenderId: "166298285211",
+    appId: "1:166298285211:web:5381e5e419754e0376c23e"
+    };
     </script>
     <script>
         let loggedInUserId = null, allUsers = [], currentUserIndex = 0;
@@ -274,35 +278,100 @@
         function handleSwipe(touchEndX, touchEndY) { const dxSwipe = touchEndX - touchStartX; const dySwipe = touchEndY - touchStartY; if (changingDirection) return; const goingUp = dy === -1; const goingDown = dy === 1; const goingRight = dx === 1; const goingLeft = dx === -1; if (Math.abs(dxSwipe) > Math.abs(dySwipe)) { if (dxSwipe > 0 && !goingLeft) { dx = 1; dy = 0; changingDirection = true; } else if (dxSwipe < 0 && !goingRight) { dx = -1; dy = 0; changingDirection = true; } } else { if (dySwipe > 0 && !goingUp) { dx = 0; dy = 1; changingDirection = true; } else if (dySwipe < 0 && !goingDown) { dx = 0; dy = -1; changingDirection = true; } } }
         async function updateHighScore(score) { if (!loggedInUserId || !score) return; try { const userRef = db.collection('users').doc(loggedInUserId); const doc = await userRef.get(); if (doc.exists) { const currentHighScore = doc.data().pongHighScore || 0; if (score > currentHighScore) { await userRef.update({ pongHighScore: score }); } } } catch(error) { console.error("ハイスコア更新エラー:", error); } }
         
-        const pixelCanvas = document.getElementById('pixel-canvas'); const pixelCtx = pixelCanvas.getContext('2d'); const pixelStatusEl = document.getElementById('pixel-status'); const colorPalette = document.getElementById('color-palette'); let unsubscribePixels;
-        // ▼▼▼ 修正点1: 状態管理変数を追加 ▼▼▼
+// ▼▼▼ ピクセルゲーム修正箇所 ▼▼▼
+        const pixelCanvas = document.getElementById('pixel-canvas');
+        const pixelCtx = pixelCanvas.getContext('2d');
+        const pixelStatusEl = document.getElementById('pixel-status');
+        const colorPalette = document.getElementById('color-palette');
+
+        let unsubscribePixels;
+        let pixelDataCache = {};
         let canPlacePixelToday = false;
-        let isPixelGameLoading = true; // チェック中かどうかを管理するフラグ
-        // ▲▲▲ 修正点1 ここまで ▲▲▲
+        let isPixelGameInitialized = false;
         let selectedColor = 'FF0000';
-        const PIXEL_GRID_SIZE = 8;
-        
-        function getTodayDateString() { const now = new Date(); const jstOffset = 9 * 60 * 60 * 1000; return new Date(now.getTime() + jstOffset).toISOString().split('T')[0]; }
-        
+        const PIXEL_GRID_SIZE = 16; // グリッドサイズを8x8から16x16に拡大
+
+        function getTodayDateString() {
+            const now = new Date();
+            const jstOffset = 9 * 60 * 60 * 1000; // JST (UTC+9)
+            return new Date(now.getTime() + jstOffset).toISOString().split('T')[0];
+        }
+
         function initPixelGame() {
-            isPixelGameLoading = true; // チェック開始
+            if (isPixelGameInitialized) return;
+
             const container = pixelCanvas.parentElement;
             const size = Math.min(container.clientWidth * 0.95, 400);
             pixelCanvas.width = size;
             pixelCanvas.height = size;
-            checkPixelAbility();
+            
+            renderColorPalette();
+
+            pixelStatusEl.textContent = "キャンバスを読み込んでいます...";
+            pixelDataCache = {};
+
             if (unsubscribePixels) unsubscribePixels();
+
             unsubscribePixels = db.collection("canvas_pixels").onSnapshot(snapshot => {
-                const pixels = {};
-                snapshot.forEach(doc => { pixels[doc.id] = doc.data().color; });
-                drawAllPixels(pixels);
+                let hasChanges = false;
+                snapshot.docChanges().forEach(change => {
+                    hasChanges = true;
+                    const docId = change.doc.id;
+                    if (!/^\d+_\d+$/.test(docId)) return;
+                    
+                    if (change.type === "added" || change.type === "modified") {
+                        pixelDataCache[docId] = change.doc.data().color;
+                    }
+                    if (change.type === "removed") {
+                        delete pixelDataCache[docId];
+                    }
+                });
+                
+                // 初回読み込み時または変更があった場合のみ再描画
+                if (!isPixelGameInitialized || hasChanges) {
+                    drawAllPixels();
+                }
+
+                if (!isPixelGameInitialized) {
+                    checkPixelAbility();
+                    isPixelGameInitialized = true;
+                }
+            }, error => {
+                console.error("ピクセルデータの取得に失敗しました:", error);
+                pixelStatusEl.textContent = "エラー: キャンバスを読み込めませんでした。";
             });
+
             pixelCanvas.addEventListener('click', handlePixelCanvasClick);
             colorPalette.addEventListener('click', handleColorSelection);
         }
 
-        function stopPixelGame() { if (unsubscribePixels) { unsubscribePixels(); unsubscribePixels = null; } pixelCanvas.removeEventListener('click', handlePixelCanvasClick); colorPalette.removeEventListener('click', handleColorSelection); }
-        
+        function stopPixelGame() {
+            if (unsubscribePixels) {
+                unsubscribePixels();
+                unsubscribePixels = null;
+            }
+            pixelCanvas.removeEventListener('click', handlePixelCanvasClick);
+            colorPalette.removeEventListener('click', handleColorSelection);
+            isPixelGameInitialized = false; // タブを離れたら初期化状態をリセット
+        }
+
+        function renderColorPalette() {
+            // 色の種類を増やしました
+            const colors = ['FF0000', '00FF00', '0000FF', 'FFFF00', 'FF00FF', '00FFFF', 'FFFFFF', '000000', 'FF69B4', 'FFA500', 'A52A2A', '800080'];
+            colorPalette.innerHTML = '';
+            colors.forEach((color, index) => {
+                const div = document.createElement('div');
+                div.className = 'color-choice';
+                div.style.backgroundColor = `#${color}`;
+                div.dataset.color = color;
+                if (index === 0) {
+                    div.classList.add('selected');
+                    selectedColor = color;
+                }
+                colorPalette.appendChild(div);
+            });
+        }
+
         async function checkPixelAbility() {
             if (!loggedInUserId) return;
             pixelStatusEl.textContent = "ステータスを確認中...";
@@ -311,41 +380,30 @@
                 if (userDoc.exists) {
                     const userData = userDoc.data();
                     const today = getTodayDateString();
-                    if (userData.lastPixelPlacedDate === today) {
-                        canPlacePixelToday = false;
-                        pixelStatusEl.textContent = "今日の分はもう置きました。また明日！";
-                    } else {
-                        canPlacePixelToday = true;
-                        pixelStatusEl.textContent = "好きな色を選んで、キャンバスをクリックしてください。";
-                    }
+                    canPlacePixelToday = userData.lastPixelPlacedDate !== today;
+                    pixelStatusEl.textContent = canPlacePixelToday ? "好きな色を選んで、キャンバスをクリックしてください。" : "今日の分はもう置きました。また明日！";
                 }
             } catch (error) {
                 console.error("ユーザーデータ取得エラー:", error);
                 pixelStatusEl.textContent = "エラーが発生しました。リロードしてください。";
-            } finally {
-                // ▼▼▼ 修正点2: チェック完了フラグを立てる ▼▼▼
-                isPixelGameLoading = false; // チェック完了
-                // ▲▲▲ 修正点2 ここまで ▲▲▲
             }
         }
-        
-        function drawAllPixels(pixels) {
+
+        function drawAllPixels() {
             const pixelSize = pixelCanvas.width / PIXEL_GRID_SIZE;
-            pixelCtx.fillStyle = '#242424'; 
+            pixelCtx.fillStyle = '#121212';
             pixelCtx.fillRect(0, 0, pixelCanvas.width, pixelCanvas.height);
 
-            for (let y = 0; y < PIXEL_GRID_SIZE; y++) {
-                for (let x = 0; x < PIXEL_GRID_SIZE; x++) {
-                    const docId = `${x}_${y}`;
-                    if (pixels[docId]) {
-                        pixelCtx.fillStyle = `#${pixels[docId]}`;
-                        pixelCtx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
-                    }
+            for (const docId in pixelDataCache) {
+                const [x, y] = docId.split('_').map(Number);
+                if (!isNaN(x) && !isNaN(y)) {
+                    pixelCtx.fillStyle = `#${pixelDataCache[docId]}`;
+                    pixelCtx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
                 }
             }
             
             pixelCtx.strokeStyle = '#444';
-            pixelCtx.lineWidth = 1;
+            pixelCtx.lineWidth = 0.5;
             for (let i = 0; i <= PIXEL_GRID_SIZE; i++) {
                 const pos = i * pixelSize;
                 pixelCtx.beginPath();
@@ -358,36 +416,53 @@
                 pixelCtx.stroke();
             }
         }
-        
-        function handleColorSelection(event) { if (event.target.classList.contains('color-choice')) { document.querySelectorAll('.color-choice').forEach(el => el.classList.remove('selected')); event.target.classList.add('selected'); selectedColor = event.target.dataset.color; } }
-        
-        async function handlePixelCanvasClick(event) {
-            // ▼▼▼ 修正点3: チェック中とピクセル設置不可の場合は処理を中断 ▼▼▼
-            if (isPixelGameLoading || !canPlacePixelToday) {
-                return;
-            }
-            // ▲▲▲ 修正点3 ここまで ▲▲▲
 
+        function handleColorSelection(event) {
+            const target = event.target;
+            if (target.classList.contains('color-choice')) {
+                document.querySelectorAll('.color-choice').forEach(el => el.classList.remove('selected'));
+                target.classList.add('selected');
+                selectedColor = target.dataset.color;
+            }
+        }
+
+        async function handlePixelCanvasClick(event) {
+            if (!isPixelGameInitialized) return; // 初期化が完了するまで操作不可
+            if (!canPlacePixelToday) {
+                 pixelStatusEl.textContent = "今日の分はもう置きました。また明日！";
+                 return;
+            }
+
+            const rect = pixelCanvas.getBoundingClientRect();
             const pixelSize = pixelCanvas.width / PIXEL_GRID_SIZE;
-            const x = Math.floor(event.offsetX / pixelSize);
-            const y = Math.floor(event.offsetY / pixelSize);
+            const x = Math.floor((event.clientX - rect.left) / pixelSize);
+            const y = Math.floor((event.clientY - rect.top) / pixelSize);
 
             if (x < 0 || x >= PIXEL_GRID_SIZE || y < 0 || y >= PIXEL_GRID_SIZE) return;
-            const docId = `${x}_${y}`;
-            const pixelData = { color: selectedColor, userId: loggedInUserId, timestamp: firebase.firestore.FieldValue.serverTimestamp() };
             
-            canPlacePixelToday = false; // 連続で置けないように即座にフラグを倒す
+            canPlacePixelToday = false;
             pixelStatusEl.textContent = "保存中...";
+            
+            const docId = `${x}_${y}`;
+            const pixelData = { 
+                color: selectedColor, 
+                userId: loggedInUserId, 
+                timestamp: firebase.firestore.FieldValue.serverTimestamp() 
+            };
+            
             try {
+                // データベースへの書き込みを待ってから次の処理に進む
                 await db.collection('canvas_pixels').doc(docId).set(pixelData);
                 await db.collection('users').doc(loggedInUserId).update({ lastPixelPlacedDate: getTodayDateString() });
+                
                 pixelStatusEl.textContent = "ピクセルを置きました！続きはまた明日。";
             } catch (error) {
                 console.error("ピクセル保存エラー:", error);
                 pixelStatusEl.textContent = "エラーが発生しました。もう一度試してください。";
-                canPlacePixelToday = true; // エラー時は再度置けるようにフラグを戻す
+                canPlacePixelToday = true; // エラーが起きたので再度試せるようにする
             }
         }
+        // ▲▲▲ ピクセルゲーム修正箇所ここまで ▲▲▲
 
         let unsubscribeShiritori; const shiritoriTurnInfoEl = document.getElementById('shiritori-turn-info'); const shiritoriHistoryEl = document.getElementById('shiritori-history'); const shiritoriInput = document.getElementById('shiritori-input'); const shiritoriSubmitBtn = document.getElementById('shiritori-submit-btn');
         function stopShiritoriGame() { if (unsubscribeShiritori) { unsubscribeShiritori(); unsubscribeShiritori = null; } }
