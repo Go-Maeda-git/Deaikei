@@ -91,8 +91,7 @@
         #pixel-status { margin-top: 15px; color: var(--text-muted); min-height: 1.5em; }
         #color-palette { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin: 15px auto 0; max-width: 300px; }
         .color-choice { width: 35px; height: 35px; border-radius: 50%; cursor: pointer; border: 3px solid #555; transition: transform 0.2s; }
-        .color-choic
-        e.selected { border-color: var(--text-light); transform: scale(1.1); }
+        .color-choice.selected { border-color: var(--text-light); transform: scale(1.1); }
         #shiritori-turn-info { padding: 10px; background-color: var(--card-dark); border-radius: 10px; margin-bottom: 15px; }
         #shiritori-history { width: 100%; max-width: 350px; height: 40vh; background-color: #000; border: 1px solid #444; border-radius: 10px; overflow-y: auto; padding: 10px; margin-bottom: 15px; display: flex; flex-direction: column; }
         .shiritori-word { padding: 5px 10px; border-radius: 15px; margin-bottom: 5px; max-width: 80%; }
@@ -105,7 +104,24 @@
 </head>
 <body>
     <div id="app-wrapper">
-        <div id="login-screen" class="screen active"><div class="login-container"><h1>孤選</h1><p>学校のメールアドレスでログイン/登録</p><input type="email" id="email-input" placeholder="sXXXXX@s.akashi.ac.jp"><button id="send-link-btn" onclick="sendSignInLink()">認証メールを送信</button><p id="login-message" style="font-size:0.9em;margin-top:1em;height:2.5em;color:var(--text-muted)"></p></div></div>
+        <!-- ▼▼▼ 修正箇所 ▼▼▼ ローディング表示を追加 -->
+        <div id="login-screen" class="screen active">
+            <div class="login-container">
+                <div id="login-form">
+                    <h1>孤選</h1>
+                    <p>学校のメールアドレスでログイン/登録</p>
+                    <input type="email" id="email-input" placeholder="sXXXXX@s.akashi.ac.jp">
+                    <button id="send-link-btn" onclick="sendSignInLink()">認証メールを送信</button>
+                    <p id="login-message" style="font-size:0.9em;margin-top:1em;height:2.5em;color:var(--text-muted)"></p>
+                </div>
+                <div id="loading-indicator" style="display: none;">
+                    <h1>孤選</h1>
+                    <p>ログイン処理中です...</p>
+                </div>
+            </div>
+        </div>
+        <!-- ▲▲▲ 修正箇所ここまで ▲▲▲ -->
+
         <div id="profile-setup-screen" class="screen"><div class="login-container"><h1>ようこそ！</h1><p>はじめにプロフィールを設定してください</p><p style="font-size:0.9em;margin-top:1.5em">好きなアバターを選んでください</p><div id="avatar-selection-grid"></div><input type="text" id="register-name" placeholder="ニックネーム"><select id="register-faculty"><option value="機械工学科">M科</option><option value="電気情報工学科">E科</option><option value="都市システム工学科">C科</option><option value="建築学科">A科</option></select><select id="register-grade"><option value="1年">1年</option><option value="2年">2年</option><option value="3年">3年</option><option value="4年">4年</option><option value="5年">5年</option><option value="専攻科1年">専攻科1年</option><option value="専攻科2年">専攻科2年</option></select><button onclick="handleProfileSetup()" id="setup-button">登録して利用を開始する</button></div></div>
         <div id="main-screen" class="screen"><div class="app-container"><div id="card-stack"></div><div id="actions-area" class="actions"><div class="action-btn nope" onclick="handleNope()"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></div><div class="action-btn like" onclick="handleLikeClick()"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg></div></div></div><nav id="main-nav"></nav></div>
         <div id="matches-screen" class="screen"><div class="list-container"><h2>マッチング一覧</h2><div id="match-list"></div></div><nav id="matches-nav"></nav></div>
@@ -122,7 +138,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script>
         const firebaseConfig = {
-            apiKey: "AIzaSyAxlPXsKTiwjMcPE2v8Rmrab4W0VWhubE4",
+            apiKey: "AIzaSyAx1PXsKTiwjMcPE2v8Rmrab4W0WHubeE4",
             authDomain: "deaikei-kosen.firebaseapp.com",
             projectId: "deaikei-kosen",
             storageBucket: "deaikei-kosen.firebasestorage.app",
@@ -146,9 +162,38 @@
         const getDailyTopic = () => dailyTopics[Math.floor((new Date()-new Date(new Date().getFullYear(),0,0))/(1e3*60*60*24))%dailyTopics.length];
         const sanitizeHTML = s => {const e=document.createElement('div');e.textContent=s;return e.innerHTML;};
         
-        if(auth.isSignInWithEmailLink(window.location.href)) handleEmailLinkSignIn();
-        auth.onAuthStateChanged(async u=>{if(u){currentUid=u.uid;const d=await db.collection('users').doc(u.uid).get();if(d.exists){if(!d.data().studentId&&u.email)await db.collection('users').doc(u.uid).update({studentId:u.email.split('@')[0]});await loadUsersForCards();showTab('main-screen')}else{showTab('profile-setup-screen')}}else{currentUid=null;allUsers=[];userIdx=0;showTab('login-screen')}});
-        
+        // ▼▼▼ 修正箇所 ▼▼▼ 認証フローの修正
+        const isEmailLinkSignIn = auth.isSignInWithEmailLink(window.location.href);
+
+        if (isEmailLinkSignIn) {
+            // リンクから来た場合は、まずローディング画面を表示
+            $('login-form').style.display = 'none';
+            $('loading-indicator').style.display = 'block';
+            handleEmailLinkSignIn();
+        }
+
+        auth.onAuthStateChanged(async user => {
+            if (user) {
+                currentUid = user.uid;
+                const userDoc = await db.collection('users').doc(user.uid).get();
+                if (userDoc.exists) {
+                    if (!userDoc.data().studentId && user.email) {
+                        await db.collection('users').doc(user.uid).update({ studentId: user.email.split('@')[0] });
+                    }
+                    await loadUsersForCards();
+                    showTab('main-screen');
+                } else {
+                    showTab('profile-setup-screen');
+                }
+            } else if (!isEmailLinkSignIn) { // リンクからのアクセスでなく、かつ未ログインの場合のみログイン画面を表示
+                currentUid = null;
+                allUsers = [];
+                userIdx = 0;
+                showTab('login-screen');
+            }
+        });
+        // ▲▲▲ 修正箇所ここまで ▲▲▲
+
         const showTab = id => {
             if(unsubscribeChat){unsubscribeChat();unsubscribeChat=null}
             stopSnakeGame(); stopPixelGame(); stopShiritoriGame();
@@ -228,7 +273,34 @@
         const updateInterests=async()=>{if(!currentUid)return;try{await db.collection('users').doc(currentUid).update({interests:userInterestsCache});alert('興味タグを更新しました')}catch(e){alert("更新失敗")}};
         const updateAvatar=async()=>{if(!currentUid)return;const selected=$('#avatar-edit-grid .avatar-option.selected');if(!selected)return alert('新しいアバターを選択してください');try{await db.collection('users').doc(currentUid).update({photoURL:selected.dataset.url});alert('アバターを更新しました')}catch(e){alert("更新失敗")}};
         const sendSignInLink=async()=>{const emailInput=$('email-input'),sendBtn=$('send-link-btn'),msgEl=$('login-message');const email=emailInput.value.trim();if(!email.endsWith('@s.akashi.ac.jp')){msgEl.textContent='@s.akashi.ac.jp のみ登録可能です';return}const settings={url:window.location.href,handleCodeInApp:!0};sendBtn.disabled=!0;msgEl.textContent='送信中...';try{await auth.sendSignInLinkToEmail(email,settings);window.localStorage.setItem('emailForSignIn',email);msgEl.textContent=`認証リンクを ${email} に送信しました。`;alert(`認証リンクを送信しました。\nメールを開き、このブラウザでログインを完了してください。`)}catch(e){msgEl.textContent='メール送信に失敗: '+e.message}finally{sendBtn.disabled=!1}};
-        const handleEmailLinkSignIn=async()=>{const msgEl=$('login-message');msgEl.textContent='認証中...';let email=window.localStorage.getItem('emailForSignIn');if(!email){email=window.prompt('認証を完了するため、メールアドレスを再入力してください');if(!email)return msgEl.textContent='認証がキャンセルされました'}try{await auth.signInWithEmailLink(email,window.location.href);window.localStorage.removeItem('emailForSignIn');window.history.replaceState({},document.title,window.location.pathname)}catch(e){msgEl.textContent='ログイン失敗: '+e.message;alert('ログインに失敗しました');window.history.replaceState({},document.title,window.location.pathname)}};
+        
+        // ▼▼▼ 修正箇所 ▼▼▼ 認証完了後のURLクリーンアップを追加
+        const handleEmailLinkSignIn=async()=>{
+            const msgEl = $('login-message');
+            let email = window.localStorage.getItem('emailForSignIn');
+            if (!email) {
+                email = window.prompt('認証を完了するため、メールアドレスを再入力してください');
+                if (!email) {
+                    msgEl.textContent = '認証がキャンセルされました。';
+                    $('loading-indicator').style.display = 'none';
+                    $('login-form').style.display = 'block';
+                    return;
+                }
+            }
+            try {
+                await auth.signInWithEmailLink(email, window.location.href);
+                window.localStorage.removeItem('emailForSignIn');
+                // 認証成功後、URLから認証情報を削除してリロードを防ぐ
+                window.history.replaceState({}, document.title, window.location.pathname);
+            } catch (error) {
+                msgEl.textContent = 'ログインに失敗しました: ' + error.message;
+                alert('ログインに失敗しました。');
+                window.history.replaceState({}, document.title, window.location.pathname);
+                $('loading-indicator').style.display = 'none';
+                $('login-form').style.display = 'block';
+            }
+        };
+        // ▲▲▲ 修正箇所ここまで ▲▲▲
     </script>
 </body>
 </html>
