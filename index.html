@@ -99,6 +99,34 @@
         .ranking-info { flex-grow: 1; }
         .ranking-score { font-size: 22px; font-weight: bold; color: var(--theme-pink); }
 
+        /* 広告バナーのスタイル */
+        #promo-banner {
+            position: absolute; /* app-wrapper内で絶対配置 */
+            bottom: 70px; /* ナビゲーションバーの上 */
+            right: 15px;
+            width: auto;
+            max-width: 200px;
+            background: linear-gradient(135deg, #FFD700, #FFA500); /* 金色グラデーション */
+            color: #121212;
+            border-radius: 12px;
+            padding: 10px 15px;
+            text-decoration: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+            z-index: 999; /* コンテンツの上に表示 */
+            transition: transform 0.2s;
+            border: 2px solid #FFFFFF;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        #promo-banner:hover {
+            transform: scale(1.05);
+        }
+        .promo-icon { font-size: 24px; }
+        .promo-text { display: flex; flex-direction: column; }
+        .promo-title { font-weight: bold; font-size: 12px; line-height: 1.2; }
+        .promo-subtitle { font-size: 10px; margin-top: 2px; }
+
     </style>
 </head>
 <body>
@@ -131,6 +159,16 @@
             </div>
             <nav id="ranking-nav"></nav>
         </div>
+
+        <!-- 広告バナー: リンク先はGitHub Pagesの構造に合わせています。必要に応じて href を修正してください -->
+        <a href="https://go-maeda-git.github.io/word-quiz/" target="_blank" id="promo-banner">
+            <span class="promo-icon">📖</span>
+            <div class="promo-text">
+                <div class="promo-title">金のフレーズ<br>単語アプリ</div>
+                <div class="promo-subtitle">ここからプレイ！</div>
+            </div>
+        </a>
+
     </div>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
