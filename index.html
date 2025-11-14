@@ -102,7 +102,7 @@
         /* Pixel Game Styles */
         #pixel-canvas { border: 2px solid var(--theme-pink); cursor: crosshair; image-rendering: pixelated; image-rendering: -moz-crisp-edges; image-rendering: crisp-edges; }
         #pixel-status { margin-top: 15px; color: var(--text-muted); min-height: 1.5em; }
-        #color-palette { display: flex; justify-content: center; gap: 15px; margin-top: 15px; }
+        #color-palette { display: flex; justify-content: center; flex-wrap: wrap; gap: 15px; margin-top: 15px; max-width: 250px; margin-left: auto; margin-right: auto;}
         .color-choice { width: 40px; height: 40px; border-radius: 50%; cursor: pointer; border: 3px solid #555; }
         .color-choice.selected { border-color: var(--text-light); }
         
@@ -145,9 +145,14 @@
                 <p>1日1ピクセルだけ色を置いて、みんなで絵を完成させよう！</p>
                 <canvas id="pixel-canvas"></canvas>
                 <div id="color-palette">
-                    <div class="color-choice selected" style="background-color: #FF0000;" data-color="FF0000"></div>
-                    <div class="color-choice" style="background-color: #00FF00;" data-color="00FF00"></div>
-                    <div class="color-choice" style="background-color: #0000FF;" data-color="0000FF"></div>
+                    <div class="color-choice selected" style="background-color: #FFFFFF;" data-color="FFFFFF"></div>
+                    <div class="color-choice" style="background-color: #c1c1c1;" data-color="c1c1c1"></div>
+                    <div class="color-choice" style="background-color: #585858;" data-color="585858"></div>
+                    <div class="color-choice" style="background-color: #000000;" data-color="000000"></div>
+                    <div class="color-choice" style="background-color: #FF4500;" data-color="FF4500"></div>
+                    <div class="color-choice" style="background-color: #FFD700;" data-color="FFD700"></div>
+                    <div class="color-choice" style="background-color: #32CD32;" data-color="32CD32"></div>
+                    <div class="color-choice" style="background-color: #1E90FF;" data-color="1E90FF"></div>
                 </div>
                 <div id="pixel-status"></div>
             </div>
@@ -190,7 +195,7 @@
         let currentChatRoomId = null, unsubscribeChat = null;
         let userInterestsCache = [];
         let usersCache = {};
-
+    
         const navHTML = `
             <button onclick="showTab('main-screen')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12.75 2.25A2.25 2.25 0 0010.5 4.5v15a2.25 2.25 0 002.25 2.25h.518a.75.75 0 00.74-1.023l-.26-1.037a1.5 1.5 0 011.025-1.742 1.5 1.5 0 011.742 1.025l.26 1.037a.75.75 0 00.74 1.023h.518a2.25 2.25 0 002.25-2.25v-15a2.25 2.25 0 00-2.25-2.25H12.75zM12 4.5h6.75v15H12V4.5zM3.75 6A2.25 2.25 0 001.5 8.25v9A2.25 2.25 0 003.75 19.5h.518a.75.75 0 00.74-1.023l-.26-1.037a1.5 1.5 0 011.025-1.742 1.5 1.5 0 011.742 1.025l.26 1.037A.75.75 0 008.482 19.5h.518A2.25 2.25 0 0011.25 17.25v-9A2.25 2.25 0 009 6H3.75zM3 8.25h6.75v9H3v-9z" /></svg></button>
             <button onclick="showTab('matches-screen')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M4.848 2.771A49.144 49.144 0 0112 2.25c2.43 0 4.817.178 7.152.52 1.978.292 3.348 2.024 3.348 3.97v6.02c0 1.946-1.37 3.678-3.348 3.97a48.901 48.901 0 01-3.476.383.39.39 0 00-.297.17l-2.755 4.133a.75.75 0 01-1.248 0l-2.755-4.133a.39.39 0 00-.297-.17 48.9 48.9 0 01-3.476-.384c-1.978-.29-3.348-2.024-3.348-3.97V6.741c0-1.946 1.37-3.68 3.348-3.97zM6.75 8.25a.75.75 0 01.75-.75h9a.75.75 0 010 1.5h-9a.75.75 0 01-.75-.75zm.75 2.25a.75.75 0 000 1.5H12a.75.75 0 000-1.5H7.5z" clip-rule="evenodd" /></svg></button>
@@ -206,7 +211,7 @@
         const getDailyTopic = () => { const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24)); return dailyTopics[dayOfYear % dailyTopics.length]; };
         const allInterests = ["プログラミング", "機械学習", "電子工作", "設計", "実験", "ロボコン", "Python", "Java", "C++", "JavaScript", "CAD", "3Dプリンタ", "VR/AR", "ドローン", "Web制作", "アプリ開発", "デザイン", "映像制作", "DTM", "ゲーム制作", "eスポーツ", "バスケ", "サッカー", "テニス", "バドミントン", "野球", "陸上", "音楽", "軽音", "吹奏楽", "バンド", "ギター", "ピアノ", "写真", "筋トレ", "料理", "お菓子作り", "アニメ", "漫画", "ゲーム", "イラスト", "映画鑑賞", "読書", "旅行", "ツーリング", "資格勉強", "TOEIC", "インターン", "起業したい", "ボランティア", "バイク"];
         const sanitizeHTML = (str) => { const temp = document.createElement('div'); temp.textContent = str; return temp.innerHTML; };
-
+    
         (function() { if (auth.isSignInWithEmailLink(window.location.href)) handleEmailLinkSignIn(); })();
         
         auth.onAuthStateChanged(async (user) => {
@@ -245,7 +250,7 @@
             if (screenId === 'pixel-game-screen') initPixelGame();
             if (screenId === 'shiritori-game-screen') initShiritoriGame();
         }
-
+    
         async function handleProfileSetup() { const name = document.getElementById('register-name').value.trim(); if (!name) { alert('ニックネームは必須です。'); return; } const selectedAvatar = document.querySelector('#avatar-selection-grid .avatar-option.selected'); let avatarUrl = selectedAvatar ? selectedAvatar.dataset.url : '/Deaikei/images/user (1).png'; const user = auth.currentUser; if (!user) return; const studentId = user.email.split('@')[0]; const profileData = { uid: user.uid, studentId: studentId, name: name, photoURL: avatarUrl, faculty: document.getElementById('register-faculty').value, grade: document.getElementById('register-grade').value, interests: [], isBanned: false, blockedUsers: [], pongHighScore: 0, lastPixelPlacedDate: "" }; await db.collection('users').doc(user.uid).set(profileData); await loadUsersForCards(); showTab('main-screen'); }
         async function loadUsersForCards() { if (!loggedInUserId) return; const stack = document.getElementById('card-stack'); stack.innerHTML = `<div id="no-more-cards"><h3>ユーザーを探しています...</h3></div>`; try { const myDoc = await db.collection('users').doc(loggedInUserId).get(); const myData = myDoc.data() || {}; const myBlockedUsers = myData.blockedUsers || []; const myLikesSnapshot = await db.collection('likes').where('from', '==', loggedInUserId).get(); const swipedUserIds = myLikesSnapshot.docs.map(doc => doc.data().to); swipedUserIds.push(...myBlockedUsers); const usersSnapshot = await db.collection('users').get(); allUsers = usersSnapshot.docs.map(doc => doc.data()).filter(user => user && user.uid && user.uid !== loggedInUserId && !user.isBanned && !swipedUserIds.includes(user.uid) && !(user.blockedUsers && user.blockedUsers.includes(loggedInUserId))); currentUserIndex = 0; renderCurrentCard(); } catch (error) { console.error("ユーザー読み込みエラー:", error); stack.innerHTML = `<div id="no-more-cards"><h3>エラーが発生しました</h3><p>ユーザー情報の取得に失敗しました。</p></div>`; } }
         function renderCurrentCard() { const stack = document.getElementById('card-stack'); const actions = document.getElementById('actions-area'); if (currentUserIndex >= allUsers.length) { stack.innerHTML = `<div id="no-more-cards"><h3>表示できる相手がいません</h3><p>新しいユーザーが参加するまで、<br>しばらくお待ちください。</p></div>`; actions.style.display = 'none'; return; } actions.style.display = 'flex'; const user = allUsers[currentUserIndex]; const imageUrl = user.photoURL || '/Deaikei/images/user (1).png'; const safeName = sanitizeHTML(user.name); const safeStudentId = sanitizeHTML(user.studentId || ''); const safeFaculty = sanitizeHTML(user.faculty); const safeGrade = sanitizeHTML(user.grade); const tagsHTML = (user.interests || []).map(tag => `<div class="profile-tag">${sanitizeHTML(tag)}</div>`).join(''); let dailyTopicHTML = ''; if (user.dailyAnswer && user.dailyTopicQuestion) { dailyTopicHTML = `<div class="daily-topic-area"><div class="question">${sanitizeHTML(user.dailyTopicQuestion)}</div><div class="answer">${sanitizeHTML(user.dailyAnswer)}</div></div>`; } stack.innerHTML = `<div class="profile-card" data-user-id="${user.uid}"><img src="${imageUrl}" class="profile-pic"><div class="profile-info"><div class="profile-header"><h3>${safeName} <small>(${safeStudentId})</small></h3><button class="user-action-btn" onclick="handleUserAction('${user.uid}', '${user.name}')">•••</button></div><p>${safeFaculty}・${safeGrade}</p><div class="profile-tags">${tagsHTML}</div>${dailyTopicHTML}</div></div>`; }
@@ -274,43 +279,39 @@
         function handleSwipe(touchEndX, touchEndY) { const dxSwipe = touchEndX - touchStartX; const dySwipe = touchEndY - touchStartY; if (changingDirection) return; const goingUp = dy === -1; const goingDown = dy === 1; const goingRight = dx === 1; const goingLeft = dx === -1; if (Math.abs(dxSwipe) > Math.abs(dySwipe)) { if (dxSwipe > 0 && !goingLeft) { dx = 1; dy = 0; changingDirection = true; } else if (dxSwipe < 0 && !goingRight) { dx = -1; dy = 0; changingDirection = true; } } else { if (dySwipe > 0 && !goingUp) { dx = 0; dy = 1; changingDirection = true; } else if (dySwipe < 0 && !goingDown) { dx = 0; dy = -1; changingDirection = true; } } }
         async function updateHighScore(score) { if (!loggedInUserId || !score) return; try { const userRef = db.collection('users').doc(loggedInUserId); const doc = await userRef.get(); if (doc.exists) { const currentHighScore = doc.data().pongHighScore || 0; if (score > currentHighScore) { await userRef.update({ pongHighScore: score }); } } } catch(error) { console.error("ハイスコア更新エラー:", error); } }
         
-        // ▼▼▼ ピクセルゲーム修正箇所 ▼▼▼
+        // ▼▼▼ ピクセルゲーム ▼▼▼
         const pixelCanvas = document.getElementById('pixel-canvas'); const pixelCtx = pixelCanvas.getContext('2d'); const pixelStatusEl = document.getElementById('pixel-status'); const colorPalette = document.getElementById('color-palette');
         let unsubscribePixels;
-        let pixelDataCache = {}; // 修正: Firestoreからのデータを保持するローカルキャッシュ
+        let pixelDataCache = {};
         let canPlacePixelToday = false;
         let isPixelGameLoading = true;
-        let selectedColor = 'FF0000';
+        let selectedColor = 'FFFFFF';
         const PIXEL_GRID_SIZE = 8;
         
         function getTodayDateString() { const now = new Date(); const jstOffset = 9 * 60 * 60 * 1000; return new Date(now.getTime() + jstOffset).toISOString().split('T')[0]; }
         
         function initPixelGame() {
             isPixelGameLoading = true;
-            pixelDataCache = {}; // 修正: タブを開くたびにキャッシュを初期化
+            pixelDataCache = {};
             const container = pixelCanvas.parentElement;
             const size = Math.min(container.clientWidth * 0.95, 400);
-            pixelCanvas.width = size;
-            pixelCanvas.height = size;
+            pixelCanvas.width = size; pixelCanvas.height = size;
             checkPixelAbility();
             if (unsubscribePixels) unsubscribePixels();
             
-            // 修正: onSnapshotはローカルキャッシュを更新し、描画関数を呼び出す
             unsubscribePixels = db.collection("canvas_pixels").onSnapshot(snapshot => {
                 snapshot.docChanges().forEach(change => {
                     if (change.type === "added" || change.type === "modified") {
                         pixelDataCache[change.doc.id] = change.doc.data().color;
                     }
-                    if (change.type === "removed") {
-                        delete pixelDataCache[change.doc.id];
-                    }
+                    if (change.type === "removed") { delete pixelDataCache[change.doc.id]; }
                 });
                 drawAllPixels(pixelDataCache);
             });
             pixelCanvas.addEventListener('click', handlePixelCanvasClick);
             colorPalette.addEventListener('click', handleColorSelection);
         }
-
+    
         function stopPixelGame() { if (unsubscribePixels) { unsubscribePixels(); unsubscribePixels = null; } pixelCanvas.removeEventListener('click', handlePixelCanvasClick); colorPalette.removeEventListener('click', handleColorSelection); }
         
         async function checkPixelAbility() {
@@ -320,103 +321,67 @@
             try {
                 const userDoc = await db.collection('users').doc(loggedInUserId).get();
                 if (userDoc.exists) {
-                    const userData = userDoc.data();
-                    const today = getTodayDateString();
+                    const userData = userDoc.data(); const today = getTodayDateString();
                     canPlacePixelToday = userData.lastPixelPlacedDate !== today;
                     pixelStatusEl.textContent = canPlacePixelToday ? "好きな色を選んで、キャンバスをクリックしてください。" : "今日の分はもう置きました。また明日！";
                 }
             } catch (error) {
                 console.error("ユーザーデータ取得エラー:", error);
                 pixelStatusEl.textContent = "エラーが発生しました。リロードしてください。";
-            } finally {
-                isPixelGameLoading = false;
-            }
+            } finally { isPixelGameLoading = false; }
         }
         
         function drawAllPixels(pixels) {
             const pixelSize = pixelCanvas.width / PIXEL_GRID_SIZE;
             pixelCtx.fillStyle = '#242424'; 
             pixelCtx.fillRect(0, 0, pixelCanvas.width, pixelCanvas.height);
-
             for (const docId in pixels) {
                 const [x, y] = docId.split('_').map(Number);
-                if (!isNaN(x) && !isNaN(y)) {
-                    pixelCtx.fillStyle = `#${pixels[docId]}`;
-                    pixelCtx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
-                }
+                if (!isNaN(x) && !isNaN(y)) { pixelCtx.fillStyle = `#${pixels[docId]}`; pixelCtx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize); }
             }
-            
-            pixelCtx.strokeStyle = '#444';
-            pixelCtx.lineWidth = 1;
+            pixelCtx.strokeStyle = '#444'; pixelCtx.lineWidth = 1;
             for (let i = 0; i <= PIXEL_GRID_SIZE; i++) {
                 const pos = i * pixelSize;
-                pixelCtx.beginPath();
-                pixelCtx.moveTo(pos, 0);
-                pixelCtx.lineTo(pos, pixelCanvas.height);
-                pixelCtx.stroke();
-                pixelCtx.beginPath();
-                pixelCtx.moveTo(0, pos);
-                pixelCtx.lineTo(pixelCanvas.width, pos);
-                pixelCtx.stroke();
+                pixelCtx.beginPath(); pixelCtx.moveTo(pos, 0); pixelCtx.lineTo(pos, pixelCanvas.height); pixelCtx.stroke();
+                pixelCtx.beginPath(); pixelCtx.moveTo(0, pos); pixelCtx.lineTo(pixelCanvas.width, pos); pixelCtx.stroke();
             }
         }
         
         function handleColorSelection(event) { if (event.target.classList.contains('color-choice')) { document.querySelectorAll('.color-choice').forEach(el => el.classList.remove('selected')); event.target.classList.add('selected'); selectedColor = event.target.dataset.color; } }
         
-        // 修正: handlePixelCanvasClickのロジックを全面的に見直し
-        function handlePixelCanvasClick(event) {
-            if (isPixelGameLoading || !canPlacePixelToday) {
-                return;
-            }
-
+        async function handlePixelCanvasClick(event) {
+            if (isPixelGameLoading || !canPlacePixelToday) return;
+    
             const pixelSize = pixelCanvas.width / PIXEL_GRID_SIZE;
             const x = Math.floor(event.offsetX / pixelSize);
             const y = Math.floor(event.offsetY / pixelSize);
-
+    
             if (x < 0 || x >= PIXEL_GRID_SIZE || y < 0 || y >= PIXEL_GRID_SIZE) return;
             
-            canPlacePixelToday = false; // 連続クリックを防止
-            
-            const docId = `${x}_${y}`;
-            const originalColor = pixelDataCache[docId]; // エラー時の復元用に元の色を保持
-
-            // 楽観的UI更新: まずローカルキャッシュを更新して即時描画
-            pixelDataCache[docId] = selectedColor;
-            drawAllPixels(pixelDataCache);
-            
+            canPlacePixelToday = false;
             pixelStatusEl.textContent = "保存中...";
             
-            const pixelData = { 
-                color: selectedColor, 
-                userId: loggedInUserId, 
-                timestamp: firebase.firestore.FieldValue.serverTimestamp() 
-            };
-            
-            // awaitを使わずに非同期でDB更新
-            db.collection('canvas_pixels').doc(docId).set(pixelData)
-                .then(() => {
-                    return db.collection('users').doc(loggedInUserId).update({ lastPixelPlacedDate: getTodayDateString() });
-                })
-                .then(() => {
-                    pixelStatusEl.textContent = "ピクセルを置きました！続きはまた明日。";
-                })
-                .catch(error => {
-                    console.error("ピクセル保存エラー:", error);
-                    pixelStatusEl.textContent = "エラーが発生しました。もう一度試してください。";
-                    canPlacePixelToday = true; // エラーが起きたので再度試せるようにする
-                    
-                    // エラーが起きたらキャッシュを元の状態に戻す
-                    if (originalColor) {
-                        pixelDataCache[docId] = originalColor;
-                    } else {
-                        delete pixelDataCache[docId];
-                    }
-                    // 画面を元に戻す
-                    drawAllPixels(pixelDataCache); 
-                });
+            try {
+                const batch = db.batch();
+                
+                const pixelRef = db.collection('canvas_pixels').doc(`${x}_${y}`);
+                const pixelData = { color: selectedColor, userId: loggedInUserId, timestamp: firebase.firestore.FieldValue.serverTimestamp() };
+                batch.set(pixelRef, pixelData);
+                
+                const userRef = db.collection('users').doc(loggedInUserId);
+                batch.update(userRef, { lastPixelPlacedDate: getTodayDateString() });
+                
+                await batch.commit();
+                
+                pixelStatusEl.textContent = "ピクセルを置きました！続きはまた明日。";
+    
+            } catch (error) {
+                console.error("ピクセル保存エラー:", error);
+                pixelStatusEl.textContent = "エラーが発生しました。もう一度試してください。";
+                canPlacePixelToday = true;
+            }
         }
-        // ▲▲▲ ピクセルゲーム修正箇所ここまで ▲▲▲
-
+    
         let unsubscribeShiritori; const shiritoriTurnInfoEl = document.getElementById('shiritori-turn-info'); const shiritoriHistoryEl = document.getElementById('shiritori-history'); const shiritoriInput = document.getElementById('shiritori-input'); const shiritoriSubmitBtn = document.getElementById('shiritori-submit-btn');
         function stopShiritoriGame() { if (unsubscribeShiritori) { unsubscribeShiritori(); unsubscribeShiritori = null; } }
         async function getUserName(userId) { if (usersCache[userId]) return usersCache[userId]; try { const userDoc = await db.collection('users').doc(userId).get(); if (userDoc.exists) { const name = userDoc.data().name; usersCache[userId] = name; return name; } } catch (error) { console.error("ユーザー名取得エラー:", error); } return "不明"; }
@@ -433,13 +398,13 @@
             
             shiritoriSubmitBtn.disabled = true;
             const gameRef = db.collection('shiritori').doc('currentGame');
-
+    
             try {
                 await db.runTransaction(async (transaction) => {
                     const gameDoc = await transaction.get(gameRef);
-                    const newWordEntry = { word, userId: loggedInUserId, timestamp: firebase.firestore.FieldValue.serverTimestamp() };
-
-                    if (!gameDoc.exists) { // ゲーム初回
+                    const newWordEntry = { word, userId: loggedInUserId, timestamp: new Date() };
+    
+                    if (!gameDoc.exists) {
                         transaction.set(gameRef, { 
                             words: [newWordEntry],
                             playerQueue: [loggedInUserId],
@@ -447,7 +412,7 @@
                         });
                         return;
                     }
-
+    
                     const gameData = gameDoc.data();
                     if (gameData.currentPlayerId !== loggedInUserId) { throw new Error("あなたのターンではありません。"); }
                     if (gameData.words.some(e => e.word === word)) { throw new Error("その言葉は既に使用されています。"); }
@@ -457,7 +422,7 @@
                     if (word.charAt(0) !== nextChar && (!altNextChar || word.charAt(0) !== altNextChar)) {
                         throw new Error(`「${nextChar}」から始まる言葉を入力してください。`);
                     }
-
+    
                     const newWords = [...gameData.words, newWordEntry];
                     
                     let playerQueue = gameData.playerQueue || [];
@@ -467,7 +432,7 @@
                     const currentPlayerIndex = playerQueue.indexOf(gameData.currentPlayerId);
                     const nextPlayerIndex = (currentPlayerIndex + 1) % playerQueue.length;
                     const nextPlayerId = playerQueue[nextPlayerIndex];
-
+    
                     transaction.update(gameRef, {
                         words: newWords,
                         currentPlayerId: nextPlayerId,
@@ -485,7 +450,7 @@
                 }
             }
         }
-
+    
         // =======================================================
         // ▼▼▼ Other Functions ▼▼▼
         // =======================================================
