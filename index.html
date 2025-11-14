@@ -99,26 +99,55 @@
         .ranking-info { flex-grow: 1; }
         .ranking-score { font-size: 22px; font-weight: bold; color: var(--theme-pink); }
 
-        /* Ad Banner Styles */
+        /* ▼▼▼ CSS変更点 ▼▼▼ */
         #ad-banner {
             position: fixed;
             bottom: 20px;
             right: 20px;
             background: linear-gradient(90deg, #FD297B, #FF655B);
             color: white;
-            padding: 12px 20px;
+            padding: 10px 15px;
             border-radius: 30px;
             text-decoration: none;
             font-weight: bold;
             font-size: 14px;
             box-shadow: 0 5px 20px rgba(0,0,0,0.5);
             z-index: 1000;
-            transition: transform 0.2s ease-in-out;
+            transition: transform 0.2s ease-in-out, opacity 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 15px;
         }
 
         #ad-banner:hover {
             transform: scale(1.05);
         }
+        
+        .ad-close-btn {
+            background: rgba(0,0,0,0.2);
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            line-height: 1;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .ad-close-btn:hover {
+            background: rgba(0,0,0,0.4);
+        }
+
+        #ad-banner.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.8);
+        }
+        /* ▲▲▲ CSS変更点ここまで ▲▲▲ */
+
     </style>
 </head>
 <body>
@@ -127,7 +156,6 @@
         <div id="profile-setup-screen" class="screen"><div class="login-container"><h1>ようこそ！</h1><p>はじめにプロフィールを設定してください</p><p style="font-size: 0.9em; margin-top: 1.5em;">好きなアバターを選んでください</p><div id="avatar-selection-grid"></div><input type="text" id="register-name" placeholder="ニックネーム"><select id="register-faculty"><option value="機械工学科">M科</option><option value="電気情報工学科">E科</option><option value="都市システム工学科">C科</option><option value="建築学科">A科</option></select><select id="register-grade"><option value="1年">1年</option><option value="2年">2年</option><option value="3年">3年</option><option value="4年">4年</option><option value="5年">5年</option><option value="専攻科1年">専攻科1年</option><option value="専攻科2年">専攻科2年</option></select><button onclick="handleProfileSetup()" id="setup-button">登録して利用を開始する</button></div></div>
         <div id="main-screen" class="screen"><div class="app-container"><div id="card-stack"></div><div id="actions-area" class="actions"><div class="action-btn nope" onclick="handleNope()"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></div><div class="action-btn like" onclick="handleLikeClick()"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg></div></div></div><nav id="main-nav"></nav></div>
         <div id="matches-screen" class="screen"><div class="list-container"><h2>マッチング一覧</h2><div id="match-list"></div></div><nav id="matches-nav"></nav></div>
-        <!-- ▼▼▼ HTML変更箇所 ▼▼▼ -->
         <div id="profile-screen" class="screen">
             <div class="list-container">
                 <div class="profile-edit-section">
@@ -164,7 +192,6 @@
             </div>
             <nav id="profile-nav"></nav>
         </div>
-        <!-- ▲▲▲ HTML変更箇所ここまで ▲▲▲ -->
         <div id="chat-screen" class="screen"><div class="chat-header"><button class="chat-back-btn" onclick="showTab('matches-screen')"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="24" height="24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg></button><h2 id="chat-partner-name">相手の名前</h2></div><div class="messages-container" id="messages-container"></div><div class="chat-input-area"><input type="text" id="chat-input" placeholder="メッセージを入力..."><button id="chat-send-btn" onclick="sendMessage()"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" /></svg></button></div></div>
 
         <div id="snake-game-screen" class="screen">
@@ -292,17 +319,14 @@
         async function reportUser(userId, userName) { const reason = prompt(`'${userName}'さんを通報します。理由を入力してください。`); if (reason && reason.trim() !== '') { await db.collection('reports').add({ reportedUserId: userId, reporterId: loggedInUserId, reason: reason, timestamp: firebase.firestore.FieldValue.serverTimestamp() }); alert('通報が送信されました。ご協力ありがとうございます。'); const card = document.querySelector('.profile-card'); if (card && card.dataset.userId === userId) { handleNope(); } } }
         async function renderProfileEditor() { if (!loggedInUserId) return; const editor = document.getElementById('profile-interests-editor'); const dailyTopicQuestionEl = document.getElementById('daily-topic-question-editor'); const dailyTopicAnswerInput = document.getElementById('daily-topic-answer-input'); editor.innerHTML = "<p>情報を読み込み中...</p>"; const doc = await db.collection('users').doc(loggedInUserId).get(); if (!doc.exists) return; const userData = doc.data();
             
-            // ▼▼▼ 変更箇所 ▼▼▼
             const usernameInput = document.getElementById('username-edit-input');
             if (usernameInput) {
                 usernameInput.value = userData.name || '';
             }
-            // ▲▲▲ 変更箇所ここまで ▲▲▲
 
             userInterestsCache = userData.interests || []; renderInterestTags(editor, userInterestsCache); renderAvatarSelectionGrid('avatar-edit-grid', userData.photoURL); const topic = getDailyTopic(); dailyTopicQuestionEl.textContent = topic; if (userData.dailyTopicQuestion === topic) { dailyTopicAnswerInput.value = userData.dailyAnswer || ''; } else { dailyTopicAnswerInput.value = ''; } 
         }
 
-        // ▼▼▼ 変更箇所 ▼▼▼
         async function updateUsername() {
             if (!loggedInUserId) return;
             const input = document.getElementById('username-edit-input');
@@ -318,7 +342,6 @@
                 alert("更新に失敗しました: " + error.message);
             }
         }
-        // ▲▲▲ 変更箇所ここまで ▲▲▲
         
         async function updateDailyAnswer() { if (!loggedInUserId) return; const question = getDailyTopic(); const answer = document.getElementById('daily-topic-answer-input').value.trim(); try { await db.collection('users').doc(loggedInUserId).update({ dailyTopicQuestion: question, dailyAnswer: answer }); alert('「今日のひとこと」を更新しました！'); } catch (error) { alert("更新に失敗しました: " + error.message); } }
         function openChat(targetUserId, targetUserName, targetUserPhotoURL, targetUserStudentId) { if (!loggedInUserId || !targetUserId) return; currentChatRoomId = [loggedInUserId, targetUserId].sort().join('_'); document.getElementById('chat-partner-name').textContent = `${sanitizeHTML(targetUserName)} (${sanitizeHTML(targetUserStudentId || '')})`; showTab('chat-screen'); const messagesContainer = document.getElementById('messages-container'); messagesContainer.innerHTML = ''; const q = db.collection('chats').doc(currentChatRoomId).collection('messages').orderBy('timestamp', 'asc'); unsubscribeChat = q.onSnapshot(snapshot => { messagesContainer.innerHTML = ''; snapshot.forEach(doc => { const msg = doc.data(); const bubble = document.createElement('div'); bubble.className = 'message-bubble'; bubble.textContent = msg.text; if (msg.senderId === loggedInUserId) { bubble.classList.add('sent'); } else { bubble.classList.add('received'); } messagesContainer.appendChild(bubble); }); messagesContainer.scrollTop = messagesContainer.scrollHeight; }, error => { console.error("メッセージ受信エラー:", error); }); }
@@ -332,10 +355,28 @@
         async function updateAvatar() { if (!loggedInUserId) return; const selectedAvatar = document.querySelector('#avatar-edit-grid .avatar-option.selected'); if (!selectedAvatar) { alert('新しいアバターを選択してください。'); return; } try { await db.collection('users').doc(loggedInUserId).update({ photoURL: selectedAvatar.dataset.url }); alert('アバターを更新しました！'); } catch (error) { alert("更新失敗: " + error.message); } }
         async function sendSignInLink() { const emailInput = document.getElementById('email-input'); const sendButton = document.getElementById('send-link-btn'); const messageEl = document.getElementById('login-message'); const email = emailInput.value.trim(); if (!email.endsWith('@s.akashi.ac.jp')) { messageEl.textContent = '登録できるのは "@s.akashi.ac.jp" のメールアドレスのみです。'; return; } const actionCodeSettings = { url: window.location.href, handleCodeInApp: true }; sendButton.disabled = true; messageEl.textContent = '送信中...'; try { await auth.sendSignInLinkToEmail(email, actionCodeSettings); window.localStorage.setItem('emailForSignIn', email); messageEl.textContent = `認証用のリンクを ${email} に送信しました。メールを確認してください。`; alert(`認証リンクを送信しました。\nメールを開き、このブラウザでリンクをクリックしてログインを完了してください。`); } catch (error) { console.error("メール送信エラー:", error); messageEl.textContent = 'メールの送信に失敗しました: ' + error.message; } finally { sendButton.disabled = false; } }
         async function handleEmailLinkSignIn() { const messageEl = document.getElementById('login-message'); messageEl.textContent = '認証情報を確認しています...'; let email = window.localStorage.getItem('emailForSignIn'); if (!email) { email = window.prompt('認証を完了するため、メールアドレスを再度入力してください。'); if (!email) { messageEl.textContent = '認証がキャンセルされました。'; return; } } try { await auth.signInWithEmailLink(email, window.location.href); window.localStorage.removeItem('emailForSignIn'); window.history.replaceState({}, document.title, window.location.pathname); } catch (error) { console.error("ログインエラー:", error); messageEl.textContent = 'ログインに失敗しました: ' + error.message; alert('ログインに失敗しました。'); window.history.replaceState({}, document.title, window.location.pathname); } }
+
+        // ▼▼▼ JavaScript変更点 ▼▼▼
+        document.addEventListener('DOMContentLoaded', () => {
+            const adBanner = document.getElementById('ad-banner');
+            const closeBtn = document.querySelector('.ad-close-btn');
+
+            if (adBanner && closeBtn) {
+                closeBtn.addEventListener('click', (event) => {
+                    event.preventDefault(); // リンクへの遷移を防ぐ
+                    event.stopPropagation(); // 親要素(aタグ)へのイベント伝播を防ぐ
+                    adBanner.classList.add('hidden');
+                });
+            }
+        });
+        // ▲▲▲ JavaScript変更点ここまで ▲▲▲
     </script>
 
+    <!-- ▼▼▼ HTML変更点 ▼▼▼ -->
     <a href="https://go-maeda-git.github.io/word-quiz/streamlit_quiz_app.html" target="_blank" id="ad-banner">
-        品詞クイズで力試し(TOEIC頻出)！ここからプレイ
+        単語クイズで力試し！(Tex前田監修)
+        <span class="ad-close-btn">&times;</span>
     </a>
+    <!-- ▲▲▲ HTML変更点ここまで ▲▲▲ -->
 </body>
 </html>
