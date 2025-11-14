@@ -99,34 +99,26 @@
         .ranking-info { flex-grow: 1; }
         .ranking-score { font-size: 22px; font-weight: bold; color: var(--theme-pink); }
 
-        /* 広告バナーのスタイル */
-        #promo-banner {
-            position: absolute; /* app-wrapper内で絶対配置 */
-            bottom: 70px; /* ナビゲーションバーの上 */
-            right: 15px;
-            width: auto;
-            max-width: 200px;
-            background: linear-gradient(135deg, #FFD700, #FFA500); /* 金色グラデーション */
-            color: #121212;
-            border-radius: 12px;
-            padding: 10px 15px;
+        /* Ad Banner Styles */
+        #ad-banner {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: linear-gradient(90deg, #FD297B, #FF655B);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 30px;
             text-decoration: none;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.6);
-            z-index: 999; /* コンテンツの上に表示 */
-            transition: transform 0.2s;
-            border: 2px solid #FFFFFF;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            font-weight: bold;
+            font-size: 14px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+            z-index: 1000;
+            transition: transform 0.2s ease-in-out;
         }
-        #promo-banner:hover {
+
+        #ad-banner:hover {
             transform: scale(1.05);
         }
-        .promo-icon { font-size: 24px; }
-        .promo-text { display: flex; flex-direction: column; }
-        .promo-title { font-weight: bold; font-size: 12px; line-height: 1.2; }
-        .promo-subtitle { font-size: 10px; margin-top: 2px; }
-
     </style>
 </head>
 <body>
@@ -135,7 +127,44 @@
         <div id="profile-setup-screen" class="screen"><div class="login-container"><h1>ようこそ！</h1><p>はじめにプロフィールを設定してください</p><p style="font-size: 0.9em; margin-top: 1.5em;">好きなアバターを選んでください</p><div id="avatar-selection-grid"></div><input type="text" id="register-name" placeholder="ニックネーム"><select id="register-faculty"><option value="機械工学科">M科</option><option value="電気情報工学科">E科</option><option value="都市システム工学科">C科</option><option value="建築学科">A科</option></select><select id="register-grade"><option value="1年">1年</option><option value="2年">2年</option><option value="3年">3年</option><option value="4年">4年</option><option value="5年">5年</option><option value="専攻科1年">専攻科1年</option><option value="専攻科2年">専攻科2年</option></select><button onclick="handleProfileSetup()" id="setup-button">登録して利用を開始する</button></div></div>
         <div id="main-screen" class="screen"><div class="app-container"><div id="card-stack"></div><div id="actions-area" class="actions"><div class="action-btn nope" onclick="handleNope()"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></div><div class="action-btn like" onclick="handleLikeClick()"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg></div></div></div><nav id="main-nav"></nav></div>
         <div id="matches-screen" class="screen"><div class="list-container"><h2>マッチング一覧</h2><div id="match-list"></div></div><nav id="matches-nav"></nav></div>
-        <div id="profile-screen" class="screen"><div class="list-container"><div class="profile-edit-section"><h2>アバターの変更</h2><div id="avatar-edit-grid"></div><button onclick="updateAvatar()">アバターを更新</button></div><div class="profile-edit-section"><h2>興味・関心タグ</h2><div id="profile-interests-editor" class="tag-container"></div><div id="custom-interest-adder"><input type="text" id="custom-interest-input" placeholder="タグを自由に追加"><button id="add-interest-btn" onclick="addCustomInterest()">追加</button></div><button onclick="updateInterests()" style="margin-top: 1em;">興味タグを更新</button></div><div class="profile-edit-section"><h2>今日のひとこと</h2><p id="daily-topic-question-editor" style="color: var(--text-muted);"></p><textarea id="daily-topic-answer-input" placeholder="回答を入力..."></textarea><button onclick="updateDailyAnswer()">ひとことを更新</button></div><div class="profile-edit-section"><h2>アカウント設定</h2><button class="report-button" onclick="handleBugReport()">不具合を報告する</button><button class="logout-button" onclick="handleLogout()">ログアウト</button><button class="delete-button" onclick="handleDeleteAccount()">アカウントを完全に削除する</button></div></div><nav id="profile-nav"></nav></div>
+        <!-- ▼▼▼ HTML変更箇所 ▼▼▼ -->
+        <div id="profile-screen" class="screen">
+            <div class="list-container">
+                <div class="profile-edit-section">
+                    <h2>ニックネームの変更</h2>
+                    <input type="text" id="username-edit-input" placeholder="新しいニックネーム" style="margin-bottom: 0.5em;">
+                    <button onclick="updateUsername()">ニックネームを更新</button>
+                </div>
+                <div class="profile-edit-section">
+                    <h2>アバターの変更</h2>
+                    <div id="avatar-edit-grid"></div>
+                    <button onclick="updateAvatar()">アバターを更新</button>
+                </div>
+                <div class="profile-edit-section">
+                    <h2>興味・関心タグ</h2>
+                    <div id="profile-interests-editor" class="tag-container"></div>
+                    <div id="custom-interest-adder">
+                        <input type="text" id="custom-interest-input" placeholder="タグを自由に追加">
+                        <button id="add-interest-btn" onclick="addCustomInterest()">追加</button>
+                    </div>
+                    <button onclick="updateInterests()" style="margin-top: 1em;">興味タグを更新</button>
+                </div>
+                <div class="profile-edit-section">
+                    <h2>今日のひとこと</h2>
+                    <p id="daily-topic-question-editor" style="color: var(--text-muted);"></p>
+                    <textarea id="daily-topic-answer-input" placeholder="回答を入力..."></textarea>
+                    <button onclick="updateDailyAnswer()">ひとことを更新</button>
+                </div>
+                <div class="profile-edit-section">
+                    <h2>アカウント設定</h2>
+                    <button class="report-button" onclick="handleBugReport()">不具合を報告する</button>
+                    <button class="logout-button" onclick="handleLogout()">ログアウト</button>
+                    <button class="delete-button" onclick="handleDeleteAccount()">アカウントを完全に削除する</button>
+                </div>
+            </div>
+            <nav id="profile-nav"></nav>
+        </div>
+        <!-- ▲▲▲ HTML変更箇所ここまで ▲▲▲ -->
         <div id="chat-screen" class="screen"><div class="chat-header"><button class="chat-back-btn" onclick="showTab('matches-screen')"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="24" height="24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg></button><h2 id="chat-partner-name">相手の名前</h2></div><div class="messages-container" id="messages-container"></div><div class="chat-input-area"><input type="text" id="chat-input" placeholder="メッセージを入力..."><button id="chat-send-btn" onclick="sendMessage()"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" /></svg></button></div></div>
 
         <div id="snake-game-screen" class="screen">
@@ -159,16 +188,6 @@
             </div>
             <nav id="ranking-nav"></nav>
         </div>
-
-        <!-- 広告バナー: リンク先はGitHub Pagesの構造に合わせています。必要に応じて href を修正してください -->
-        <a href="https://go-maeda-git.github.io/kinhure1000/word.html" target="_blank" id="promo-banner">
-            <span class="promo-icon">📖</span>
-            <div class="promo-text">
-                <div class="promo-title">金のフレーズ<br>単語アプリ</div>
-                <div class="promo-subtitle">ここからプレイ！</div>
-            </div>
-        </a>
-
     </div>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -234,7 +253,7 @@
             if (screenId === 'snake-game-screen') initSnakeGame();
         }
 
-        async function handleProfileSetup() { const name = document.getElementById('register-name').value.trim(); if (!name) { alert('ニックネームは必須です。'); return; } const selectedAvatar = document.querySelector('#avatar-selection-grid .avatar-option.selected'); let avatarUrl = selectedAvatar ? selectedAvatar.dataset.url : '/Deaikei/images/user (1).png'; const user = auth.currentUser; if (!user) return; const studentId = user.email.split('@')[0]; const profileData = { uid: user.uid, studentId: studentId, name: name, photoURL: avatarUrl, faculty: document.getElementById('register-faculty').value, grade: document.getElementById('register-grade').value, interests: [], isBanned: false, blockedUsers: [], pongHighScore: 0, lastPixelPlacedDate: "" }; await db.collection('users').doc(user.uid).set(profileData); await loadUsersForCards(); showTab('main-screen'); }
+        async function handleProfileSetup() { const name = document.getElementById('register-name').value.trim(); if (!name) { alert('ニックネームは必須です。'); return; } const selectedAvatar = document.querySelector('#avatar-selection-grid .avatar-option.selected'); let avatarUrl = selectedAvatar ? selectedAvatar.dataset.url : '/Deaikei/images/user (1).png'; const user = auth.currentUser; if (!user) return; const studentId = user.email.split('@')[0]; const profileData = { uid: user.uid, studentId: studentId, name: name, photoURL: avatarUrl, faculty: document.getElementById('register-faculty').value, grade: document.getElementById('register-grade').value, interests: [], isBanned: false, blockedUsers: [], pongHighScore: 0 }; await db.collection('users').doc(user.uid).set(profileData); await loadUsersForCards(); showTab('main-screen'); }
         async function loadUsersForCards() { if (!loggedInUserId) return; const stack = document.getElementById('card-stack'); stack.innerHTML = `<div id="no-more-cards"><h3>ユーザーを探しています...</h3></div>`; try { const myDoc = await db.collection('users').doc(loggedInUserId).get(); const myData = myDoc.data() || {}; const myBlockedUsers = myData.blockedUsers || []; const myLikesSnapshot = await db.collection('likes').where('from', '==', loggedInUserId).get(); const swipedUserIds = myLikesSnapshot.docs.map(doc => doc.data().to); swipedUserIds.push(...myBlockedUsers); const usersSnapshot = await db.collection('users').get(); allUsers = usersSnapshot.docs.map(doc => doc.data()).filter(user => user && user.uid && user.uid !== loggedInUserId && !user.isBanned && !swipedUserIds.includes(user.uid) && !(user.blockedUsers && user.blockedUsers.includes(loggedInUserId))); currentUserIndex = 0; renderCurrentCard(); } catch (error) { console.error("ユーザー読み込みエラー:", error); stack.innerHTML = `<div id="no-more-cards"><h3>エラーが発生しました</h3><p>ユーザー情報の取得に失敗しました。</p></div>`; } }
         function renderCurrentCard() { const stack = document.getElementById('card-stack'); const actions = document.getElementById('actions-area'); if (currentUserIndex >= allUsers.length) { stack.innerHTML = `<div id="no-more-cards"><h3>表示できる相手がいません</h3><p>新しいユーザーが参加するまで、<br>しばらくお待ちください。</p></div>`; actions.style.display = 'none'; return; } actions.style.display = 'flex'; const user = allUsers[currentUserIndex]; const imageUrl = user.photoURL || '/Deaikei/images/user (1).png'; const safeName = sanitizeHTML(user.name); const safeStudentId = sanitizeHTML(user.studentId || ''); const safeFaculty = sanitizeHTML(user.faculty); const safeGrade = sanitizeHTML(user.grade); const tagsHTML = (user.interests || []).map(tag => `<div class="profile-tag">${sanitizeHTML(tag)}</div>`).join(''); let dailyTopicHTML = ''; if (user.dailyAnswer && user.dailyTopicQuestion) { dailyTopicHTML = `<div class="daily-topic-area"><div class="question">${sanitizeHTML(user.dailyTopicQuestion)}</div><div class="answer">${sanitizeHTML(user.dailyAnswer)}</div></div>`; } stack.innerHTML = `<div class="profile-card" data-user-id="${user.uid}"><img src="${imageUrl}" class="profile-pic"><div class="profile-info"><div class="profile-header"><h3>${safeName} <small>(${safeStudentId})</small></h3><button class="user-action-btn" onclick="handleUserAction('${user.uid}', '${user.name}')">•••</button></div><p>${safeFaculty}・${safeGrade}</p><div class="profile-tags">${tagsHTML}</div>${dailyTopicHTML}</div></div>`; }
         async function handleNope() { if (currentUserIndex >= allUsers.length) return; const card = document.querySelector('.profile-card'); if (card) { card.classList.add('exit-nope'); const targetUser = allUsers[currentUserIndex]; if (targetUser && targetUser.uid) { await db.collection('likes').add({ from: loggedInUserId, to: targetUser.uid, type: 'nope' }); } setTimeout(() => { currentUserIndex++; renderCurrentCard(); }, 400); } }
@@ -271,7 +290,36 @@
         async function handleUserAction(event, userId, userName) { if (event && typeof event.stopPropagation === 'function') { event.stopPropagation(); } const action = prompt(`'${userName}'さんへの操作を選択してください。\n1: ブロック\n2: 通報\n(数字を入力してください)`); if (action === '1') { blockUser(userId, userName); } else if (action === '2') { reportUser(userId, userName); } }
         async function blockUser(userId, userName) { if (!confirm(`'${userName}'さんをブロックしますか？\nブロックすると、お互いの画面に二度と表示されなくなります。`)) return; try { await db.collection('users').doc(loggedInUserId).update({ blockedUsers: firebase.firestore.FieldValue.arrayUnion(userId) }); alert(`'${userName}'さんをブロックしました。`); const card = document.querySelector('.profile-card'); if (card && card.dataset.userId === userId) { handleNope(); } if (document.getElementById('matches-screen').classList.contains('active')) { renderMatches(); } } catch (error) { console.error("ブロック処理エラー:", error); alert("ブロックに失敗しました。"); } }
         async function reportUser(userId, userName) { const reason = prompt(`'${userName}'さんを通報します。理由を入力してください。`); if (reason && reason.trim() !== '') { await db.collection('reports').add({ reportedUserId: userId, reporterId: loggedInUserId, reason: reason, timestamp: firebase.firestore.FieldValue.serverTimestamp() }); alert('通報が送信されました。ご協力ありがとうございます。'); const card = document.querySelector('.profile-card'); if (card && card.dataset.userId === userId) { handleNope(); } } }
-        async function renderProfileEditor() { if (!loggedInUserId) return; const editor = document.getElementById('profile-interests-editor'); const dailyTopicQuestionEl = document.getElementById('daily-topic-question-editor'); const dailyTopicAnswerInput = document.getElementById('daily-topic-answer-input'); editor.innerHTML = "<p>情報を読み込み中...</p>"; const doc = await db.collection('users').doc(loggedInUserId).get(); if (!doc.exists) return; const userData = doc.data(); userInterestsCache = userData.interests || []; renderInterestTags(editor, userInterestsCache); renderAvatarSelectionGrid('avatar-edit-grid', userData.photoURL); const topic = getDailyTopic(); dailyTopicQuestionEl.textContent = topic; if (userData.dailyTopicQuestion === topic) { dailyTopicAnswerInput.value = userData.dailyAnswer || ''; } else { dailyTopicAnswerInput.value = ''; } }
+        async function renderProfileEditor() { if (!loggedInUserId) return; const editor = document.getElementById('profile-interests-editor'); const dailyTopicQuestionEl = document.getElementById('daily-topic-question-editor'); const dailyTopicAnswerInput = document.getElementById('daily-topic-answer-input'); editor.innerHTML = "<p>情報を読み込み中...</p>"; const doc = await db.collection('users').doc(loggedInUserId).get(); if (!doc.exists) return; const userData = doc.data();
+            
+            // ▼▼▼ 変更箇所 ▼▼▼
+            const usernameInput = document.getElementById('username-edit-input');
+            if (usernameInput) {
+                usernameInput.value = userData.name || '';
+            }
+            // ▲▲▲ 変更箇所ここまで ▲▲▲
+
+            userInterestsCache = userData.interests || []; renderInterestTags(editor, userInterestsCache); renderAvatarSelectionGrid('avatar-edit-grid', userData.photoURL); const topic = getDailyTopic(); dailyTopicQuestionEl.textContent = topic; if (userData.dailyTopicQuestion === topic) { dailyTopicAnswerInput.value = userData.dailyAnswer || ''; } else { dailyTopicAnswerInput.value = ''; } 
+        }
+
+        // ▼▼▼ 変更箇所 ▼▼▼
+        async function updateUsername() {
+            if (!loggedInUserId) return;
+            const input = document.getElementById('username-edit-input');
+            const newName = input.value.trim();
+            if (!newName) {
+                alert('ニックネームを入力してください。');
+                return;
+            }
+            try {
+                await db.collection('users').doc(loggedInUserId).update({ name: newName });
+                alert('ニックネームを更新しました！');
+            } catch (error) {
+                alert("更新に失敗しました: " + error.message);
+            }
+        }
+        // ▲▲▲ 変更箇所ここまで ▲▲▲
+        
         async function updateDailyAnswer() { if (!loggedInUserId) return; const question = getDailyTopic(); const answer = document.getElementById('daily-topic-answer-input').value.trim(); try { await db.collection('users').doc(loggedInUserId).update({ dailyTopicQuestion: question, dailyAnswer: answer }); alert('「今日のひとこと」を更新しました！'); } catch (error) { alert("更新に失敗しました: " + error.message); } }
         function openChat(targetUserId, targetUserName, targetUserPhotoURL, targetUserStudentId) { if (!loggedInUserId || !targetUserId) return; currentChatRoomId = [loggedInUserId, targetUserId].sort().join('_'); document.getElementById('chat-partner-name').textContent = `${sanitizeHTML(targetUserName)} (${sanitizeHTML(targetUserStudentId || '')})`; showTab('chat-screen'); const messagesContainer = document.getElementById('messages-container'); messagesContainer.innerHTML = ''; const q = db.collection('chats').doc(currentChatRoomId).collection('messages').orderBy('timestamp', 'asc'); unsubscribeChat = q.onSnapshot(snapshot => { messagesContainer.innerHTML = ''; snapshot.forEach(doc => { const msg = doc.data(); const bubble = document.createElement('div'); bubble.className = 'message-bubble'; bubble.textContent = msg.text; if (msg.senderId === loggedInUserId) { bubble.classList.add('sent'); } else { bubble.classList.add('received'); } messagesContainer.appendChild(bubble); }); messagesContainer.scrollTop = messagesContainer.scrollHeight; }, error => { console.error("メッセージ受信エラー:", error); }); }
         async function sendMessage() { const input = document.getElementById('chat-input'); const text = input.value.trim(); if (text === '' || !currentChatRoomId || !loggedInUserId) return; const tempText = text; input.value = ''; try { await db.collection('chats').doc(currentChatRoomId).collection('messages').add({ text: tempText, senderId: loggedInUserId, timestamp: firebase.firestore.FieldValue.serverTimestamp() }); } catch (error) { console.error("メッセージ送信エラー:", error); alert("メッセージの送信に失敗しました。"); input.value = tempText; } }
@@ -285,5 +333,9 @@
         async function sendSignInLink() { const emailInput = document.getElementById('email-input'); const sendButton = document.getElementById('send-link-btn'); const messageEl = document.getElementById('login-message'); const email = emailInput.value.trim(); if (!email.endsWith('@s.akashi.ac.jp')) { messageEl.textContent = '登録できるのは "@s.akashi.ac.jp" のメールアドレスのみです。'; return; } const actionCodeSettings = { url: window.location.href, handleCodeInApp: true }; sendButton.disabled = true; messageEl.textContent = '送信中...'; try { await auth.sendSignInLinkToEmail(email, actionCodeSettings); window.localStorage.setItem('emailForSignIn', email); messageEl.textContent = `認証用のリンクを ${email} に送信しました。メールを確認してください。`; alert(`認証リンクを送信しました。\nメールを開き、このブラウザでリンクをクリックしてログインを完了してください。`); } catch (error) { console.error("メール送信エラー:", error); messageEl.textContent = 'メールの送信に失敗しました: ' + error.message; } finally { sendButton.disabled = false; } }
         async function handleEmailLinkSignIn() { const messageEl = document.getElementById('login-message'); messageEl.textContent = '認証情報を確認しています...'; let email = window.localStorage.getItem('emailForSignIn'); if (!email) { email = window.prompt('認証を完了するため、メールアドレスを再度入力してください。'); if (!email) { messageEl.textContent = '認証がキャンセルされました。'; return; } } try { await auth.signInWithEmailLink(email, window.location.href); window.localStorage.removeItem('emailForSignIn'); window.history.replaceState({}, document.title, window.location.pathname); } catch (error) { console.error("ログインエラー:", error); messageEl.textContent = 'ログインに失敗しました: ' + error.message; alert('ログインに失敗しました。'); window.history.replaceState({}, document.title, window.location.pathname); } }
     </script>
+
+    <a href="https://go-maeda-git.github.io/word-quiz/streamlit_quiz_app.html" target="_blank" id="ad-banner">
+        単語クイズで力試し！ここからプレイ
+    </a>
 </body>
 </html>
