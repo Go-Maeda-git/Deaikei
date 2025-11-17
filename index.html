@@ -99,55 +99,6 @@
         .ranking-info { flex-grow: 1; }
         .ranking-score { font-size: 22px; font-weight: bold; color: var(--theme-pink); }
 
-        /* ▼▼▼ CSS変更点 ▼▼▼ */
-        #ad-banner {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: linear-gradient(90deg, #FD297B, #FF655B);
-            color: white;
-            padding: 10px 15px;
-            border-radius: 30px;
-            text-decoration: none;
-            font-weight: bold;
-            font-size: 14px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
-            z-index: 1000;
-            transition: transform 0.2s ease-in-out, opacity 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        #ad-banner:hover {
-            transform: scale(1.05);
-        }
-        
-        .ad-close-btn {
-            background: rgba(0,0,0,0.2);
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            line-height: 1;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        .ad-close-btn:hover {
-            background: rgba(0,0,0,0.4);
-        }
-
-        #ad-banner.hidden {
-            opacity: 0;
-            pointer-events: none;
-            transform: scale(0.8);
-        }
-        /* ▲▲▲ CSS変更点ここまで ▲▲▲ */
-
     </style>
 </head>
 <body>
@@ -355,28 +306,6 @@
         async function updateAvatar() { if (!loggedInUserId) return; const selectedAvatar = document.querySelector('#avatar-edit-grid .avatar-option.selected'); if (!selectedAvatar) { alert('新しいアバターを選択してください。'); return; } try { await db.collection('users').doc(loggedInUserId).update({ photoURL: selectedAvatar.dataset.url }); alert('アバターを更新しました！'); } catch (error) { alert("更新失敗: " + error.message); } }
         async function sendSignInLink() { const emailInput = document.getElementById('email-input'); const sendButton = document.getElementById('send-link-btn'); const messageEl = document.getElementById('login-message'); const email = emailInput.value.trim(); if (!email.endsWith('@s.akashi.ac.jp')) { messageEl.textContent = '登録できるのは "@s.akashi.ac.jp" のメールアドレスのみです。'; return; } const actionCodeSettings = { url: window.location.href, handleCodeInApp: true }; sendButton.disabled = true; messageEl.textContent = '送信中...'; try { await auth.sendSignInLinkToEmail(email, actionCodeSettings); window.localStorage.setItem('emailForSignIn', email); messageEl.textContent = `認証用のリンクを ${email} に送信しました。メールを確認してください。`; alert(`認証リンクを送信しました。\nメールを開き、このブラウザでリンクをクリックしてログインを完了してください。`); } catch (error) { console.error("メール送信エラー:", error); messageEl.textContent = 'メールの送信に失敗しました: ' + error.message; } finally { sendButton.disabled = false; } }
         async function handleEmailLinkSignIn() { const messageEl = document.getElementById('login-message'); messageEl.textContent = '認証情報を確認しています...'; let email = window.localStorage.getItem('emailForSignIn'); if (!email) { email = window.prompt('認証を完了するため、メールアドレスを再度入力してください。'); if (!email) { messageEl.textContent = '認証がキャンセルされました。'; return; } } try { await auth.signInWithEmailLink(email, window.location.href); window.localStorage.removeItem('emailForSignIn'); window.history.replaceState({}, document.title, window.location.pathname); } catch (error) { console.error("ログインエラー:", error); messageEl.textContent = 'ログインに失敗しました: ' + error.message; alert('ログインに失敗しました。'); window.history.replaceState({}, document.title, window.location.pathname); } }
-
-        // ▼▼▼ JavaScript変更点 ▼▼▼
-        document.addEventListener('DOMContentLoaded', () => {
-            const adBanner = document.getElementById('ad-banner');
-            const closeBtn = document.querySelector('.ad-close-btn');
-
-            if (adBanner && closeBtn) {
-                closeBtn.addEventListener('click', (event) => {
-                    event.preventDefault(); // リンクへの遷移を防ぐ
-                    event.stopPropagation(); // 親要素(aタグ)へのイベント伝播を防ぐ
-                    adBanner.classList.add('hidden');
-                });
-            }
-        });
-        // ▲▲▲ JavaScript変更点ここまで ▲▲▲
     </script>
-
-    <!-- ▼▼▼ HTML変更点 ▼▼▼ -->
-    <a href="https://go-maeda-git.github.io/word-quiz/streamlit_quiz_app.html" target="_blank" id="ad-banner">
-        単語クイズで力試し！(Tex前田監修)
-        <span class="ad-close-btn">&times;</span>
-    </a>
-    <!-- ▲▲▲ HTML変更点ここまで ▲▲▲ -->
 </body>
 </html>
